@@ -15,6 +15,7 @@ import {
   PanelLeftOpen,
   FolderGit2,
   LogOut,
+  User,
 } from 'lucide-react';
 import { IconButton } from '../actions/IconButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -149,13 +150,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
         <NavItem
+          to="/app/profile"
+          icon={<User />}
+          label="Profile Cockpit"
+          collapsed={collapsed}
+        />
+        <NavItem
           to="/app/settings"
           icon={<Settings />}
           label="Settings"
           collapsed={collapsed}
         />
         <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between px-3 py-1.5">
-          <div className="flex items-center gap-3 min-w-0">
+          <Link to="/app/profile" className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded-full bg-primary/20 text-primary font-mono text-xs flex items-center justify-center font-bold shrink-0">
               {initials}
             </div>
@@ -165,7 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <p className="text-[10px] text-text-muted font-mono truncate capitalize">Role: {roleName}</p>
               </div>
             )}
-          </div>
+          </Link>
           {!collapsed && (
             <IconButton
               size="sm"

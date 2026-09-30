@@ -15,6 +15,16 @@ export default {
           subtle: 'var(--color-surface-subtle)',
           sunken: 'var(--color-surface-sunken)',
         },
+        obsidian: {
+          canvas: '#0B0D13',
+          surface: '#12151E',
+          elevated: '#181C28',
+          subtle: '#1C212E',
+          border: 'rgba(255, 255, 255, 0.08)',
+        },
+        interactive: {
+          hover: 'rgba(255, 255, 255, 0.035)',
+        },
         'text-primary': 'var(--color-text-primary)',
         'text-secondary': 'var(--color-text-secondary)',
         'text-muted': 'var(--color-text-muted)',

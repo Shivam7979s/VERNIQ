@@ -147,7 +147,7 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
             )}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>Custom Testcase</span>
+            <span>Custom Input</span>
           </button>
 
           <button
@@ -162,7 +162,7 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
                 : 'text-text-secondary hover:text-text-primary'
             )}
           >
-            <span>Result</span>
+            <span>Results</span>
             {verdict !== 'idle' && (
               <span
                 className={cn(

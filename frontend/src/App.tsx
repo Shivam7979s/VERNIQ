@@ -9,11 +9,12 @@ import { ProblemsView } from '@/routes/ProblemsView';
 import { CoursesView } from '@/routes/CoursesView';
 import { LeaderboardView } from '@/routes/LeaderboardView';
 import { ProfileSettingsView } from '@/routes/ProfileSettingsView';
+import { ProfileView } from '@/routes/ProfileView';
 import { ProblemWorkspace } from '@/components/workspace/ProblemWorkspace';
 import { LoginView } from '@/routes/LoginView';
 import { RegisterView } from '@/routes/RegisterView';
 import { ForgotPasswordView } from '@/routes/ForgotPasswordView';
-import { DashboardStubView } from '@/routes/DashboardStubView';
+import { DashboardView } from '@/routes/DashboardView';
 import { WorkspaceSubView } from '@/routes/WorkspaceSubView';
 import { NotFoundView } from '@/routes/NotFoundView';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -126,6 +127,14 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/plan"
             element={
               <ProtectedRoute>
@@ -139,7 +148,15 @@ export const App: React.FC = () => {
             path="/app/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardStubView />
+                <DashboardView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileView />
               </ProtectedRoute>
             }
           />

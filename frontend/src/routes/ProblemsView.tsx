@@ -11,8 +11,6 @@ import { useUserProgress } from '@/hooks/useUserProgress';
 import {
   Search,
   CheckCircle2,
-  Clock,
-  Circle,
   Star,
   ArrowUpDown,
   BookOpen,
@@ -278,7 +276,7 @@ export const ProblemsView: React.FC = () => {
                     return (
                       <tr
                         key={prob.id}
-                        className="h-12 hover:bg-surface-elevated/70 transition-colors group"
+                        className="h-11 hover:bg-white/[0.02] bg-[#12151E] transition-colors group"
                       >
                         {/* Status Checkmark */}
                         <td className="py-2 px-4 text-center">
@@ -288,13 +286,13 @@ export const ProblemsView: React.FC = () => {
                             </span>
                           )}
                           {status === 'attempted' && (
-                            <span title="Attempted">
-                              <Clock className="w-4 h-4 text-[#FFC01E] inline" />
+                            <span title="Attempted" className="inline-flex items-center justify-center">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#FFC01E]" />
                             </span>
                           )}
                           {status === 'todo' && (
-                            <span title="Todo">
-                              <Circle className="w-4 h-4 text-text-secondary/40 inline" />
+                            <span title="Todo" className="text-text-muted font-bold text-sm inline-block select-none">
+                              -
                             </span>
                           )}
                         </td>
@@ -336,13 +334,13 @@ export const ProblemsView: React.FC = () => {
                           <DifficultyBadge difficulty={prob.difficulty} />
                         </td>
 
-                        {/* Topic Tags (bg-[#333333] text-gray-300 text-xs px-2 py-0.5 rounded) */}
+                        {/* Topic Tags (bg-[#1E2330] text-[#8F96A8] text-xs px-2 py-0.5 rounded font-mono) */}
                         <td className="py-2 px-4 hidden md:table-cell">
                           <div className="flex flex-wrap gap-1.5">
                             {(prob.tags || []).map((tag) => (
                               <span
                                 key={tag}
-                                className="bg-[#333333] text-gray-300 text-xs px-2 py-0.5 rounded font-mono"
+                                className="bg-[#1E2330] text-[#8F96A8] text-xs px-2 py-0.5 rounded font-mono border border-white/[0.04]"
                               >
                                 {tag}
                               </span>

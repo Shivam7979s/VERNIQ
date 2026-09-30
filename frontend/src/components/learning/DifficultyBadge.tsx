@@ -6,13 +6,36 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export interface DifficultyBadgeProps {
   difficulty: DifficultyLevel;
   className?: string;
+  showPip?: boolean;
 }
 
-export const DifficultyBadge: React.FC<DifficultyBadgeProps> = ({ difficulty, className }) => {
-  const styles: Record<DifficultyLevel, string> = {
-    easy: 'text-[#00B8A3] bg-[#00B8A3]/10 border-[#00B8A3]/30',
-    medium: 'text-[#FFC01E] bg-[#FFC01E]/10 border-[#FFC01E]/30',
-    hard: 'text-[#FF375F] bg-[#FF375F]/10 border-[#FF375F]/30',
+export const DifficultyBadge: React.FC<DifficultyBadgeProps> = ({
+  difficulty,
+  className,
+  showPip = true,
+}) => {
+  const styles: Record<
+    DifficultyLevel,
+    { text: string; bg: string; border: string; pip: string }
+  > = {
+    easy: {
+      text: 'text-[#00B8A3]',
+      bg: 'bg-[#00B8A3]/[0.12]',
+      border: 'border-[#00B8A3]/30',
+      pip: 'bg-[#00B8A3]',
+    },
+    medium: {
+      text: 'text-[#FFC01E]',
+      bg: 'bg-[#FFC01E]/[0.12]',
+      border: 'border-[#FFC01E]/30',
+      pip: 'bg-[#FFC01E]',
+    },
+    hard: {
+      text: 'text-[#FF375F]',
+      bg: 'bg-[#FF375F]/[0.12]',
+      border: 'border-[#FF375F]/30',
+      pip: 'bg-[#FF375F]',
+    },
   };
 
   const labels: Record<DifficultyLevel, string> = {
@@ -21,15 +44,22 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = ({ difficulty, cl
     hard: 'Hard',
   };
 
+  const current = styles[difficulty] || styles.easy;
+
   return (
     <span
       className={cn(
         'inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-mono font-medium select-none',
-        styles[difficulty],
+        current.text,
+        current.bg,
+        current.border,
         className
       )}
     >
-      {labels[difficulty]}
+      {showPip && (
+        <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 shrink-0', current.pip)} />
+      )}
+      {labels[difficulty] || difficulty}
     </span>
   );
 };

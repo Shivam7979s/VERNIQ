@@ -38,6 +38,7 @@ export interface UserProfile {
   bio?: string | null;
   github_username?: string | null;
   linkedin_url?: string | null;
+  leetcode_username?: string | null;
   college_id?: string | null;
   college_name?: string | null;
   score: number;

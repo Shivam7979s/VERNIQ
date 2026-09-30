@@ -67,41 +67,47 @@
 }
 
 .dark {
-  /* Surfaces & Backgrounds - Authentic LeetCode Dark Mode */
-  --color-background: #1A1A1A;
-  --color-surface: #262626;
-  --color-surface-elevated: #2D2D2D;
-  --color-surface-subtle: #333333;
-  --color-surface-sunken: #141414;
+  /* Surfaces & Backgrounds - Obsidian Carbon System */
+  --color-background: #0B0D13;
+  --color-surface: #12151E;
+  --color-surface-elevated: #181C28;
+  --color-surface-subtle: #1C212E;
+  --color-surface-sunken: #07080C;
 
   /* Typography / Text - Dark Mode */
   --color-text-primary: #EFF0F6;
-  --color-text-secondary: #8C8C8C;
+  --color-text-secondary: #8F96A8;
   --color-text-muted: #64748B;
-  --color-text-inverse: #1A1A1A;
+  --color-text-inverse: #0B0D13;
 
-  /* Borders - Dark Mode (1px solid #3E3E3E) */
-  --color-border: #3E3E3E;
-  --color-border-strong: #525252;
-  --color-border-focus: #3B82F6;
+  /* Micro-Borders - 1px solid rgba(255, 255, 255, 0.08) */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-border-focus: rgba(59, 130, 246, 0.6);
 
-  /* Brand / Semantic - Dark Mode */
+  /* Brand / Semantic - Electric Sapphire */
   --color-primary: #3B82F6;
   --color-primary-hover: #2563EB;
-  --color-primary-subtle: #1E2A4A;
+  --color-primary-subtle: rgba(59, 130, 246, 0.12);
   --color-success: #00B8A3;
   --color-warning: #FFC01E;
   --color-error: #FF375F;
 
-  /* Difficulty - Dark Mode */
+  /* Canonical Metric & Difficulty Colors */
   --difficulty-easy: #00B8A3;
+  --difficulty-easy-tint: rgba(0, 184, 163, 0.12);
   --difficulty-medium: #FFC01E;
+  --difficulty-medium-tint: rgba(255, 192, 30, 0.12);
   --difficulty-hard: #FF375F;
+  --difficulty-hard-tint: rgba(255, 55, 95, 0.12);
+
+  /* Interactive / Row Hover */
+  --color-interactive-hover: rgba(255, 255, 255, 0.035);
 
   /* Progress - Dark Mode */
   --progress-complete: #00B8A3;
   --progress-active: #3B82F6;
-  --progress-pending: #525252;
+  --progress-pending: rgba(255, 255, 255, 0.15);
 
   /* Execution Verdicts - Dark Mode */
   --verdict-ac: #00B8A3;
@@ -111,8 +117,8 @@
   --verdict-ce: #F97316;
 
   /* Elevation Shadows - Dark Mode */
-  --elevation-border: 0 0 0 1px var(--color-border);
-  --elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px var(--color-border);
-  --elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--color-border);
-  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--color-border-strong);
+  --elevation-border: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
