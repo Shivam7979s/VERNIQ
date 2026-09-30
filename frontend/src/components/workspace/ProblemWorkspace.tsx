@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { SplitPane } from './SplitPane';
 import { TestCaseConsole, type TestCaseItem, type ExecutionVerdict } from './TestCaseConsole';
 import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
@@ -22,11 +23,16 @@ import {
   Star,
 } from 'lucide-react';
 
+import { runCode, submitSolution } from '@/lib/submissionService';
+import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
+import { ProgrammingLanguage, Submission } from '@/types';
+
 const DEFAULT_TEMPLATES: Record<string, string> = {
   cpp: `#include <vector>\n\nclass Solution {\npublic:\n    // Implement your solution\n};`,
   python: `class Solution:\n    # Implement your solution\n    pass`,
   java: `class Solution {\n    // Implement your solution\n}`,
   typescript: `function solution() {\n    // Implement your solution\n}`,
+  go: `package main\n\n// Implement your solution\nfunc solve() {\n}`,
 };
 
 export const ProblemWorkspace: React.FC = () => {
@@ -43,10 +49,47 @@ export const ProblemWorkspace: React.FC = () => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Execution state
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
+  const [submissionHistory, setSubmissionHistory] = useState<Submission[]>([]);
   const [verdict, setVerdict] = useState<ExecutionVerdict>('idle');
   const [runtimeMs, setRuntimeMs] = useState<number>(0);
   const [memoryMb, setMemoryMb] = useState<number>(0);
+  const [testCasesPassed, setTestCasesPassed] = useState<number>(0);
+  const [totalTestCases, setTotalTestCases] = useState<number>(0);
   const [stdoutLogs, setStdoutLogs] = useState<string>('');
+  const [stderrLogs, setStderrLogs] = useState<string>('');
+  const [compileOutput, setCompileOutput] = useState<string>('');
+
+  // Live Supabase Realtime verdict updates
+  const { submission: liveSubmission, isRunning, isPending } = useSubmissionRealtime(activeSubmissionId);
+
+  useEffect(() => {
+    if (liveSubmission) {
+      setVerdict(liveSubmission.verdict);
+      if (liveSubmission.runtime_ms) setRuntimeMs(liveSubmission.runtime_ms);
+      if (liveSubmission.memory_kb) setMemoryMb(liveSubmission.memory_kb / 1024);
+      if (liveSubmission.stdout_output) setStdoutLogs(liveSubmission.stdout_output);
+      if (liveSubmission.stderr_output) setStderrLogs(liveSubmission.stderr_output);
+      if (liveSubmission.compile_output) setCompileOutput(liveSubmission.compile_output);
+      if (liveSubmission.test_cases_passed !== undefined) setTestCasesPassed(liveSubmission.test_cases_passed);
+      if (liveSubmission.total_test_cases !== undefined) setTotalTestCases(liveSubmission.total_test_cases);
+
+      // On official accepted submission, notify user progress
+      if (liveSubmission.verdict === 'accepted' && !liveSubmission.is_custom_run && problem) {
+        updateProgress(problem.id, 'solved');
+      }
+
+      // Record to history if terminal verdict reached
+      if (liveSubmission.verdict !== 'pending' && liveSubmission.verdict !== 'running') {
+        setSubmissionHistory((prev) => {
+          if (prev.some((s) => s.id === liveSubmission.id)) {
+            return prev.map((s) => (s.id === liveSubmission.id ? liveSubmission : s));
+          }
+          return [liveSubmission, ...prev];
+        });
+      }
+    }
+  }, [liveSubmission, problem, updateProgress]);
 
   // Stopwatch state
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
@@ -94,37 +137,33 @@ export const ProblemWorkspace: React.FC = () => {
     }
   };
 
-  // Run code simulation
-  const handleRunCode = () => {
+  // Run code against sample visible test cases
+  const handleRunCode = async () => {
     setVerdict('running');
     setStdoutLogs('Compiling solution with target sandbox...\nVerifying against visible test vectors...');
-
-    setTimeout(() => {
-      setVerdict('ac');
-      setRuntimeMs(18);
-      setMemoryMb(14.8);
-      setStdoutLogs(
-        `[SANDBOX_OK] Exit status: 0\n[PROFILER] CPU time: 18ms (faster than 88.4% of ${language.toUpperCase()} submissions)\n[MEMORY] Peak virtual memory: 14.8MB\nAll ${sampleTestCases.length} visible test cases passed.`
-      );
-    }, 600);
+    setStderrLogs('');
+    setCompileOutput('');
+    const res = await runCode(
+      code,
+      language as ProgrammingLanguage,
+      customInput || sampleTestCases[0]?.input || ''
+    );
+    setActiveSubmissionId(res.submissionId);
   };
 
-  // Submit code simulation
-  const handleSubmitCode = () => {
+  // Submit code against all hidden test cases
+  const handleSubmitCode = async () => {
+    if (!problem) return;
     setVerdict('running');
-    setStdoutLogs('Executing solution on isolated judge container...\nTesting against 64 hidden stress-test vectors...');
-
-    setTimeout(() => {
-      setVerdict('ac');
-      setRuntimeMs(24);
-      setMemoryMb(16.2);
-      setStdoutLogs(
-        `[JUDGE_ACCEPT] 64/64 test cases passed.\nStatus: Accepted\nRuntime: 24 ms (top 92.1%)\nMemory: 16.2 MB (top 84.7%)\nPoints Awarded: +25 Score credited to campus profile.`
-      );
-      if (problem) {
-        updateProgress(problem.id, 'solved');
-      }
-    }, 1100);
+    setStdoutLogs('Executing solution on isolated judge container...\nTesting against all test vectors...');
+    setStderrLogs('');
+    setCompileOutput('');
+    const res = await submitSolution(
+      problem.id,
+      code,
+      language as ProgrammingLanguage
+    );
+    setActiveSubmissionId(res.submissionId);
   };
 
   const handleCopyCode = () => {
@@ -361,31 +400,63 @@ export const ProblemWorkspace: React.FC = () => {
         {leftTab === 'submissions' && (
           <div className="space-y-3">
             <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
-              Past Submission History
+              Session Submission History
             </h3>
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
                 <thead className="bg-surface-elevated border-b border-border text-text-secondary">
                   <tr>
                     <th className="p-2.5">Status</th>
+                    <th className="p-2.5">Type</th>
                     <th className="p-2.5">Language</th>
                     <th className="p-2.5">Runtime</th>
-                    <th className="p-2.5">Memory</th>
+                    <th className="p-2.5">Passed</th>
                     <th className="p-2.5">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {isSolved ? (
+                  {submissionHistory.length > 0 ? (
+                    submissionHistory.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-white/[0.02]">
+                        <td className="p-2.5">
+                          <span
+                            className={cn(
+                              'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
+                              sub.verdict === 'accepted'
+                                ? 'bg-[#00B8A3]/10 text-[#00B8A3] border border-[#00B8A3]/30'
+                                : 'bg-[#FF375F]/10 text-[#FF375F] border border-[#FF375F]/30'
+                            )}
+                          >
+                            {sub.verdict.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-text-secondary">
+                          {sub.is_custom_run ? 'Run' : 'Submit'}
+                        </td>
+                        <td className="p-2.5 font-mono text-text-primary uppercase">
+                          {sub.language}
+                        </td>
+                        <td className="p-2.5 text-text-primary">{sub.runtime_ms} ms</td>
+                        <td className="p-2.5 text-text-secondary">
+                          {sub.test_cases_passed}/{sub.total_test_cases}
+                        </td>
+                        <td className="p-2.5 text-text-secondary">
+                          {new Date(sub.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))
+                  ) : isSolved ? (
                     <tr>
                       <td className="p-2.5 text-[#00B8A3] font-bold">Accepted</td>
+                      <td className="p-2.5 text-text-secondary">Submit</td>
                       <td className="p-2.5 font-mono">{language.toUpperCase()}</td>
                       <td className="p-2.5">24 ms</td>
-                      <td className="p-2.5">16.2 MB</td>
-                      <td className="p-2.5 text-text-secondary">Recorded</td>
+                      <td className="p-2.5">24/24</td>
+                      <td className="p-2.5 text-text-secondary">Prior Session</td>
                     </tr>
                   ) : (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-text-secondary">
+                      <td colSpan={6} className="p-4 text-center text-text-secondary">
                         No submissions recorded yet for this session.
                       </td>
                     </tr>
@@ -415,6 +486,7 @@ export const ProblemWorkspace: React.FC = () => {
             <option value="python">Python 3.12</option>
             <option value="java">Java 21</option>
             <option value="typescript">TypeScript 5.4</option>
+            <option value="go">Go 1.23</option>
           </select>
         </div>
 
@@ -463,11 +535,15 @@ export const ProblemWorkspace: React.FC = () => {
         onCustomInputChange={setCustomInput}
         onRunCode={handleRunCode}
         onSubmit={handleSubmitCode}
-        isExecuting={verdict === 'running'}
+        isExecuting={isPending || isRunning || verdict === 'running'}
         verdict={verdict}
         runtimeMs={runtimeMs}
         memoryMb={memoryMb}
+        testCasesPassed={testCasesPassed}
+        totalTestCases={totalTestCases}
         stdoutLogs={stdoutLogs}
+        stderrLogs={stderrLogs}
+        compileOutput={compileOutput}
       />
     </div>
   );

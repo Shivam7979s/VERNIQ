@@ -7,14 +7,45 @@ export type UserRole = 'student' | 'mentor' | 'admin';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
+export type ProgrammingLanguage = 'cpp' | 'java' | 'python' | 'typescript' | 'go';
+
 export type SubmissionVerdict =
-  | 'ac'   // Accepted
-  | 'wa'   // Wrong Answer
-  | 'tle'  // Time Limit Exceeded
-  | 'mle'  // Memory Limit Exceeded
-  | 'ce'   // Compilation Error
-  | 're'   // Runtime Error
-  | 'pe';  // Presentation Error
+  | 'pending'
+  | 'running'
+  | 'accepted'
+  | 'wrong_answer'
+  | 'time_limit_exceeded'
+  | 'memory_limit_exceeded'
+  | 'compilation_error'
+  | 'runtime_error'
+  | 'internal_error'
+  | 'ac'   // Accepted shorthand
+  | 'wa'   // Wrong Answer shorthand
+  | 'tle'  // Time Limit Exceeded shorthand
+  | 'mle'  // Memory Limit Exceeded shorthand
+  | 'ce'   // Compilation Error shorthand
+  | 're'   // Runtime Error shorthand
+  | 'pe';  // Presentation Error shorthand
+
+export interface Submission {
+  id: string;
+  user_id: string;
+  problem_id?: string | null;
+  language: ProgrammingLanguage;
+  source_code: string;
+  stdin_input?: string | null;
+  verdict: SubmissionVerdict;
+  runtime_ms: number;
+  memory_kb: number;
+  stdout_output?: string | null;
+  stderr_output?: string | null;
+  compile_output?: string | null;
+  test_cases_passed: number;
+  total_test_cases: number;
+  is_custom_run: boolean;
+  created_at: string;
+  completed_at?: string | null;
+}
 
 export type CompletionStatus = 'completed' | 'in_progress' | 'pending';
 

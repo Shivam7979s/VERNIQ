@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/actions/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
@@ -21,7 +21,12 @@ import {
   CheckCircle2,
   FileCode2,
   Terminal,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
+import { runCode } from '@/lib/submissionService';
+import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
+import { ProgrammingLanguage } from '@/types';
 
 export interface ScratchTab {
   id: string;
@@ -160,8 +165,11 @@ export const StandaloneIdeView: React.FC = () => {
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
 
   // Execution Output State
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
+  const { submission: liveSubmission } = useSubmissionRealtime(activeSubmissionId);
+
   const [executionResult, setExecutionResult] = useState<{
-    status: 'idle' | 'success' | 'ce' | 're';
+    status: 'idle' | 'running' | 'success' | 'ce' | 're';
     stdout: string;
     runtimeMs: number;
     memoryKb: number;
@@ -171,6 +179,44 @@ export const StandaloneIdeView: React.FC = () => {
     runtimeMs: 0,
     memoryKb: 0,
   });
+
+  // Sync Supabase Realtime updates into terminal
+  useEffect(() => {
+    if (liveSubmission) {
+      if (liveSubmission.verdict === 'pending' || liveSubmission.verdict === 'running') {
+        setIsExecuting(true);
+        setExecutionResult({
+          status: 'running',
+          stdout:
+            liveSubmission.verdict === 'pending'
+              ? 'Submitting job to judge queue...\nWaiting for execution container worker...'
+              : 'Compiling code in isolated remote container...\nEvaluating test stream...',
+          runtimeMs: 0,
+          memoryKb: 0,
+        });
+      } else {
+        setIsExecuting(false);
+        const isSuccess = liveSubmission.verdict === 'accepted';
+        let fullOutput = liveSubmission.stdout_output || '';
+        if (liveSubmission.stderr_output) {
+          fullOutput += (fullOutput ? '\n\n' : '') + '[STDERR / DIAGNOSTICS]\n' + liveSubmission.stderr_output;
+        }
+        if (liveSubmission.compile_output) {
+          fullOutput += (fullOutput ? '\n\n' : '') + '[COMPILATION OUTPUT]\n' + liveSubmission.compile_output;
+        }
+        setExecutionResult({
+          status: isSuccess
+            ? 'success'
+            : liveSubmission.verdict === 'compilation_error'
+            ? 'ce'
+            : 're',
+          stdout: fullOutput || 'Program execution completed with no output.',
+          runtimeMs: liveSubmission.runtime_ms,
+          memoryKb: liveSubmission.memory_kb,
+        });
+      }
+    }
+  }, [liveSubmission]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -319,59 +365,32 @@ export const StandaloneIdeView: React.FC = () => {
     });
   };
 
-  // Run Code Execution
-  const handleRunCode = () => {
+  // Run Code Execution via Isolated Judge Service
+  const handleRunCode = async () => {
     setIsExecuting(true);
     setExecutionResult({
-      status: 'idle',
+      status: 'running',
       stdout: 'Compiling code in isolated remote container...\nEvaluating test stream...',
       runtimeMs: 0,
       memoryKb: 0,
     });
 
-    setTimeout(() => {
+    try {
+      const res = await runCode(
+        activeTab.code,
+        activeTab.language as ProgrammingLanguage,
+        activeTab.stdin
+      );
+      setActiveSubmissionId(res.submissionId);
+    } catch (err) {
       setIsExecuting(false);
-      const simulatedRuntime = Math.floor(Math.random() * 25) + 12;
-      const simulatedMemory = Math.floor(Math.random() * 800) + 1400;
-
-      let outputText = '';
-      if (activeTab.language === 'python') {
-        outputText = `Hello, VERNIQ Online IDE (Python 3.12)!\n`;
-        if (activeTab.stdin.trim()) {
-          outputText += `Input received:\n${activeTab.stdin}\n`;
-        }
-      } else if (activeTab.language === 'java') {
-        outputText = `Hello, VERNIQ Online IDE!\n`;
-        if (activeTab.stdin.trim()) {
-          outputText += `Input received: ${activeTab.stdin.split('\n')[0]}\n`;
-        }
-      } else if (activeTab.language === 'typescript') {
-        outputText = `Hello, VERNIQ Online IDE (TypeScript)!\n`;
-        if (activeTab.stdin.trim()) {
-          outputText += `Processed ${activeTab.stdin.split('\n').length} lines of input.\n`;
-          activeTab.stdin.split('\n').forEach((l, i) => {
-            outputText += `[${i + 1}] ${l}\n`;
-          });
-        }
-      } else if (activeTab.language === 'go') {
-        outputText = `Hello, VERNIQ Online IDE (Go 1.23)!\n`;
-        if (activeTab.stdin.trim()) {
-          outputText += `Input received: ${activeTab.stdin.split('\n')[0]}\n`;
-        }
-      } else {
-        outputText = `Hello, VERNIQ Online IDE (GCC 14)!\n`;
-        if (activeTab.stdin.trim()) {
-          outputText += `Input received: ${activeTab.stdin.split('\n')[0]}\n`;
-        }
-      }
-
       setExecutionResult({
-        status: 'success',
-        stdout: outputText,
-        runtimeMs: simulatedRuntime,
-        memoryKb: simulatedMemory,
+        status: 're',
+        stdout: `Execution dispatch failed: ${String(err)}`,
+        runtimeMs: 0,
+        memoryKb: 0,
       });
-    }, 700);
+    }
   };
 
   // Download code as file
@@ -616,12 +635,27 @@ export const StandaloneIdeView: React.FC = () => {
                   <Code2 className="w-3.5 h-3.5 text-[#00B8A3]" />
                   Output (stdout / stderr)
                 </span>
-                {executionResult.status === 'success' && (
-                  <span className="text-[10px] font-mono font-bold text-[#00B8A3] bg-[#00B8A3]/10 border border-[#00B8A3]/30 px-2 py-0.2 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Success
+                {isExecuting ? (
+                  <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                    Running in Sandbox
                   </span>
-                )}
+                ) : executionResult.status === 'success' ? (
+                  <span className="text-[10px] font-mono font-bold text-[#00B8A3] bg-[#00B8A3]/10 border border-[#00B8A3]/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Success (0)
+                  </span>
+                ) : executionResult.status === 'ce' ? (
+                  <span className="text-[10px] font-mono font-bold text-[#F97316] bg-[#F97316]/10 border border-[#F97316]/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Compilation Error
+                  </span>
+                ) : executionResult.status === 're' ? (
+                  <span className="text-[10px] font-mono font-bold text-[#FF375F] bg-[#FF375F]/10 border border-[#FF375F]/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Runtime Error / TLE
+                  </span>
+                ) : null}
               </div>
 
               {/* Execution telemetry duration & memory */}
