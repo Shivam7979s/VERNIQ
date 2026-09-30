@@ -88,7 +88,7 @@ export const ProfileView: React.FC = () => {
         {/* Top Control Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.08]">
           <div>
-            <h1 className="text-2xl font-bold font-mono text-text-primary tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-[-0.025em]">
               Developer Profile & Telemetry Cockpit
             </h1>
             <p className="text-xs text-text-secondary mt-0.5 font-sans">

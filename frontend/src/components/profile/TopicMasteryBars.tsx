@@ -105,7 +105,7 @@ export const TopicMasteryBars: React.FC<TopicMasteryBarsProps> = ({
     >
       <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
         <div>
-          <h4 className="text-sm font-semibold font-mono text-text-primary tracking-tight">
+          <h4 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
             Topic-Wise Algorithmic Mastery
           </h4>
           <p className="text-xs text-text-muted mt-0.5">

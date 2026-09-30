@@ -95,7 +95,7 @@ export const BadgeShowcase: React.FC<BadgeShowcaseProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-warning" />
-          <h4 className="text-sm font-semibold font-mono text-text-primary tracking-tight">
+          <h4 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
             Milestone Badges & Honors
           </h4>
         </div>

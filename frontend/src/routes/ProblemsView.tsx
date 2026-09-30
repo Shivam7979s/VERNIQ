@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from '@/components/ui/layout/Container';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { Input } from '@/components/ui/forms/Input';
 import { Select } from '@/components/ui/forms/Select';
-import { Badge } from '@/components/ui/data/Badge';
 import { Button } from '@/components/ui/actions/Button';
 import { useProblems } from '@/hooks/useProblems';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -100,42 +100,31 @@ export const ProblemsView: React.FC = () => {
   return (
     <div className="py-8 space-y-8 text-left bg-background min-h-screen text-text-primary">
       <Container size="xl">
-        {/* Banner */}
-        <div className="p-8 rounded-lg border border-border bg-surface shadow-elevation-1 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">Problem Catalog</Badge>
-                <Badge variant="neutral">LeetCode Standard</Badge>
+        {/* Standardized Sleek Page Header */}
+        <PageHeader
+          badge="Problem Catalog"
+          title="Engineering Problems & Challenges"
+          subtitle="Dense LeetCode-standard indexed problem repository with mathematical invariant proofs, multi-language sandbox, and spaced-repetition revision cycles."
+          actions={
+            <div className="flex items-center gap-4 bg-[#181C28] p-3 rounded-lg border border-white/[0.08]">
+              <div className="text-center px-4 border-r border-white/[0.08]">
+                <div className="text-xl font-bold font-mono text-white tabular-nums">{problems.length}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider font-mono">Total</div>
               </div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
-                Engineering Problems & Challenges
-              </h1>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                Dense LeetCode-standard indexed problem repository with mathematical invariant proofs, multi-language sandbox, and spaced-repetition revision cycles.
-              </p>
-            </div>
-
-            {/* Quick Metrics Bar */}
-            <div className="flex items-center gap-4 bg-surface-elevated p-4 rounded-lg border border-border">
-              <div className="text-center px-4 border-r border-border">
-                <div className="text-xl font-bold font-mono text-text-primary">{problems.length}</div>
-                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Total</div>
-              </div>
-              <div className="text-center px-4 border-r border-border">
-                <div className="text-xl font-bold font-mono text-[#00B8A3]">{solvedCount}</div>
-                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Solved</div>
+              <div className="text-center px-4 border-r border-white/[0.08]">
+                <div className="text-xl font-bold font-mono text-[#00B8A3] tabular-nums">{solvedCount}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider font-mono">Solved</div>
               </div>
               <div className="text-center px-4">
-                <div className="text-xl font-bold font-mono text-[#FFC01E]">{revisionCount}</div>
-                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Revision Due</div>
+                <div className="text-xl font-bold font-mono text-[#FFC01E] tabular-nums">{revisionCount}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider font-mono">Revision Due</div>
               </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Dense Filters Bar */}
-        <div className="p-4 rounded-lg border border-border bg-surface flex flex-col md:flex-row items-center gap-3 justify-between">
+        <div className="p-4 rounded-lg border border-white/[0.08] bg-[#12151E] flex flex-col md:flex-row items-center gap-3 justify-between">
           <div className="w-full md:w-80">
             <Input
               placeholder="Search problems by name or tag..."

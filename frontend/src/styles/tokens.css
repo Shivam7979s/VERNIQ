@@ -60,6 +60,13 @@
   --elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--color-border);
   --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--color-border-strong);
 
+  /* Typography & Tracking Tokens */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  --tracking-h1: -0.025em;
+  --tracking-h2: -0.02em;
+  --tracking-h3: -0.015em;
+
   /* Motion */
   --motion-fast: 100ms;
   --motion-base: 150ms;

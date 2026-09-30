@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Container } from '@/components/ui/layout/Container';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
 import { Tabs } from '@/components/ui/navigation/Tabs';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/data/Table';
@@ -275,32 +276,21 @@ export const LeaderboardView: React.FC = () => {
   return (
     <div className="py-8 space-y-8 text-left">
       <Container size="xl">
-        {/* Banner Section */}
-        <div className="p-8 rounded border border-border bg-surface shadow-elevation-1 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">Campus Identity & Rankings</Badge>
-                <Badge variant="neutral">Verified Scoring Engine</Badge>
-              </div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
-                Engineering Leaderboards
-              </h1>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                Rankings calculated from verified algorithmic test-case executions, problem solving velocity, and daily streak commitments.
-              </p>
-            </div>
-
-            {/* Pinned User Highlight Card */}
-            <div className="p-4 rounded border border-primary/30 bg-primary/5 flex items-center gap-4 shrink-0 shadow-sm">
+        {/* Standardized Sleek Page Header */}
+        <PageHeader
+          badge="Campus Identity & Rankings"
+          title="Engineering Leaderboards"
+          subtitle="Rankings calculated from verified algorithmic test-case executions, problem solving velocity, and daily streak commitments."
+          actions={
+            <div className="p-3.5 rounded-lg border border-primary/30 bg-[#181C28] flex items-center gap-3.5 shrink-0 shadow-sm">
               <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-mono font-bold text-sm">
                 #{currentUserCollegeRank}
               </div>
               <div>
-                <p className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
                   Your College Standing
                 </p>
-                <p className="text-[13px] font-semibold text-text-primary">
+                <p className="text-[13px] font-semibold font-sans text-text-primary">
                   Rank #{currentUserCollegeRank} in {currentCollegeName.split(' ')[0]}
                 </p>
                 <p className="text-[11px] text-text-secondary font-mono">
@@ -308,8 +298,8 @@ export const LeaderboardView: React.FC = () => {
                 </p>
               </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Tab Selection & Search Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

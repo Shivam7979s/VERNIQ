@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/layout/Container';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
 import { Button } from '@/components/ui/actions/Button';
 import { IconButton } from '@/components/ui/actions/IconButton';
@@ -59,22 +60,12 @@ export const FoundationView: React.FC = () => {
   return (
     <div className="py-8 space-y-10">
       <Container size="xl">
-        {/* Banner Section */}
-        <div className="p-8 rounded border border-border bg-surface shadow-elevation-1 relative overflow-hidden text-left mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">Phase 0 Baseline</Badge>
-                <Badge variant="neutral">Architecture Specification</Badge>
-              </div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
-                VERNIQ Engineering Foundation
-              </h1>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                Production-grade architecture, systematic design tokens, WCAG 2.2 AA accessibility, and zero "vibe-coded" aesthetics. All foundational primitives consume centralized semantic CSS variables.
-              </p>
-            </div>
-
+        {/* Standardized Sleek Page Header */}
+        <PageHeader
+          badge="Engineering Foundation"
+          title="VERNIQ Engineering Foundation"
+          subtitle="Production-grade architecture, systematic design tokens, WCAG 2.2 AA accessibility, and zero vibe-coded aesthetics. All foundational primitives consume centralized semantic CSS variables."
+          actions={
             <div className="flex items-center gap-3 shrink-0">
               <Button
                 variant="secondary"
@@ -98,8 +89,8 @@ export const FoundationView: React.FC = () => {
                 Test System Toast
               </Button>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Tabbed Explorer */}
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pill" className="mb-6" />

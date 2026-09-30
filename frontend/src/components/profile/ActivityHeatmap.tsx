@@ -111,7 +111,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
-          <h4 className="text-sm font-semibold font-mono text-text-primary tracking-tight">
+          <h4 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
             Submission & Consistency Heatmap
           </h4>
         </div>

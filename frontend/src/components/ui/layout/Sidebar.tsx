@@ -115,6 +115,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             )}
             <NavItem
+              to="/ide"
+              icon={<Code2 />}
+              label="Dev Tools IDE"
+              collapsed={collapsed}
+            />
+            <NavItem
               to="/app/contests"
               icon={<Trophy />}
               label="Contests"

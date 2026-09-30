@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from '@/components/ui/layout/Container';
-import { Badge } from '@/components/ui/data/Badge';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Button } from '@/components/ui/actions/Button';
 import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { useRoadmap } from '@/hooks/useRoadmap';
@@ -62,30 +62,20 @@ export const RoadmapsView: React.FC = () => {
     <div className="py-8 space-y-8 text-left bg-background min-h-screen text-text-primary">
       <Container size="xl">
         {/* Header Banner */}
-        <div className="p-8 rounded-lg border border-border bg-surface shadow-elevation-1 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">TakeUForward A2Z Sheet</Badge>
-                <Badge variant="neutral">Curriculum Tree</Badge>
-              </div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
-                {roadmap.title}
-              </h1>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                {roadmap.description}
-              </p>
-            </div>
-
-            {/* Overall Progress Gauge */}
-            <div className="p-4 rounded-lg border border-border bg-surface-elevated w-full md:w-72 space-y-2">
+        {/* Standardized Sleek Page Header */}
+        <PageHeader
+          badge="Curriculum Directed Acyclic Graph"
+          title={roadmap.title}
+          subtitle={roadmap.description}
+          actions={
+            <div className="p-3.5 rounded-lg border border-white/[0.08] bg-[#181C28] w-full md:w-72 space-y-2">
               <div className="flex items-center justify-between text-xs font-mono font-medium">
                 <span className="text-text-secondary">Total Completion</span>
-                <span className="text-[#00B8A3] font-bold">
+                <span className="text-[#00B8A3] font-bold tabular-nums">
                   {completedProblemsCount} / {totalProblemsCount} ({overallPercentage}%)
                 </span>
               </div>
-              <div className="w-full bg-surface-subtle h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[#1C212E] h-2 rounded-full overflow-hidden border border-white/[0.04]">
                 <div
                   className="bg-[#00B8A3] h-full transition-all duration-300"
                   style={{ width: `${overallPercentage}%` }}
@@ -93,13 +83,13 @@ export const RoadmapsView: React.FC = () => {
               </div>
               <div className="flex items-center justify-between text-[11px] text-text-secondary font-mono">
                 <span>Ebbinghaus Revision</span>
-                <span className="text-[#FFC01E]">
+                <span className="text-[#FFC01E] tabular-nums font-semibold">
                   {revisionActiveCount} Active
                 </span>
               </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Stepper Controls */}
         <div className="flex items-center justify-between pb-2 border-b border-border">
@@ -157,7 +147,7 @@ export const RoadmapsView: React.FC = () => {
                       {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                     </button>
                     <div>
-                      <h2 className="font-mono font-bold text-sm sm:text-base text-text-primary flex items-center gap-2">
+                      <h2 className="font-sans font-semibold tracking-[-0.02em] text-sm sm:text-base text-text-primary flex items-center gap-2">
                         <span>{step.title}</span>
                         {stepPercentage === 100 && stepProblems.length > 0 && (
                           <CheckCircle2 className="w-4 h-4 text-[#00B8A3]" />
@@ -190,7 +180,7 @@ export const RoadmapsView: React.FC = () => {
                       <div key={topic.id} className="p-4 space-y-3 bg-surface/50">
                         {/* Topic Header */}
                         <div className="flex items-center justify-between">
-                          <h3 className="font-mono font-semibold text-xs text-primary uppercase tracking-wider flex items-center gap-1.5">
+                          <h3 className="font-sans font-semibold tracking-[-0.015em] text-xs text-primary uppercase flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                             <span>{topic.title}</span>
                           </h3>

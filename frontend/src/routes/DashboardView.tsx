@@ -112,10 +112,10 @@ export const DashboardView: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#00B8A3] animate-pulse" />
               <span className="text-xs font-mono text-[#00B8A3]">System Nominal</span>
             </div>
-            <h1 className="text-2xl font-bold font-sans text-text-primary tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-[-0.025em]">
               Welcome back, {displayName}
             </h1>
-            <p className="text-xs text-text-secondary font-sans">
+            <p className="text-sm text-neutral-400 font-sans mt-0.5">
               DSA Roadmap • TakeUForward A2Z Sheet Target in Progress
             </p>
           </div>
@@ -175,7 +175,7 @@ export const DashboardView: React.FC = () => {
                     <span className="text-[11px] font-mono text-[#00B8A3] bg-[#00B8A3]/10 px-2 py-0.5 rounded border border-[#00B8A3]/30 uppercase font-semibold">
                       Step 3: Solve Problems on Arrays
                     </span>
-                    <h3 className="text-base font-bold font-mono text-text-primary mt-1.5">
+                    <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em] mt-1.5">
                       Topic 3.3: Medium & Hard Array Problems
                     </h3>
                   </div>
@@ -220,7 +220,7 @@ export const DashboardView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-warning" />
                   <div>
-                    <h3 className="text-sm font-semibold font-mono text-text-primary">
+                    <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
                       Today's Target Challenge Set
                     </h3>
                     <p className="text-[11px] text-text-muted font-sans">
@@ -337,7 +337,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <Flame className="w-4 h-4 text-[#FFC01E]" />
-                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-text-primary">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
                     30-Day Activity Pulse
                   </h4>
                 </div>
@@ -372,7 +372,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-primary" />
-                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-text-primary">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
                     Campus Leaderboard Top 5
                   </h4>
                 </div>

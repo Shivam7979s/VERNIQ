@@ -270,7 +270,7 @@ export const ProblemWorkspace: React.FC = () => {
                   </span>
                 ))}
               </div>
-              <h1 className="text-xl font-bold font-mono text-text-primary">{problem.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold font-sans text-white tracking-[-0.025em]">{problem.title}</h1>
             </div>
 
             <div className="text-sm text-text-primary leading-relaxed whitespace-pre-line font-sans">
@@ -279,7 +279,7 @@ export const ProblemWorkspace: React.FC = () => {
 
             {/* Sample Examples */}
             <div className="space-y-4">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
+              <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
                 Verified Test Vectors & Examples
               </h3>
               {sampleTestCases.map((tc, idx) => (
@@ -301,7 +301,7 @@ export const ProblemWorkspace: React.FC = () => {
 
             {/* Constraints */}
             <div className="space-y-2">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
+              <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
                 Constraints & Mathematical Bounds
               </h3>
               <div className="text-xs font-mono text-text-secondary bg-surface-elevated p-3 rounded-lg border border-border whitespace-pre-line">
@@ -315,7 +315,7 @@ export const ProblemWorkspace: React.FC = () => {
         {leftTab === 'editorial' && (
           <div className="space-y-4">
             <div className="p-4 rounded-lg border border-border bg-surface-elevated">
-              <h3 className="font-mono font-bold text-sm text-text-primary mb-2 flex items-center gap-2">
+              <h3 className="font-sans font-semibold text-base text-white tracking-[-0.015em] mb-2 flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-primary" />
                 <span>Formal Editorial & Invariant Analysis</span>
               </h3>
@@ -338,7 +338,7 @@ export const ProblemWorkspace: React.FC = () => {
         {leftTab === 'solutions' && (
           <div className="space-y-4">
             <div className="p-4 rounded-lg border border-border bg-surface-elevated space-y-3">
-              <h3 className="font-mono font-bold text-sm text-text-primary flex items-center gap-2">
+              <h3 className="font-sans font-semibold text-base text-white tracking-[-0.015em] flex items-center gap-2">
                 <Lightbulb className="w-4 h-4 text-[#FFC01E]" />
                 <span>Canonical Approaches & Proofs</span>
               </h3>
@@ -360,7 +360,7 @@ export const ProblemWorkspace: React.FC = () => {
         {/* TAB 4: SUBMISSIONS */}
         {leftTab === 'submissions' && (
           <div className="space-y-3">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
+            <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
               Past Submission History
             </h3>
             <div className="border border-border rounded-lg overflow-hidden">

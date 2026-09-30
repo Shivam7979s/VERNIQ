@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Container } from '@/components/ui/layout/Container';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
-import { Badge } from '@/components/ui/data/Badge';
 import { FileText, CheckCircle2, ArrowUpRight } from 'lucide-react';
 
 interface DocSpec {
@@ -117,15 +117,11 @@ export const ArchitectureView: React.FC = () => {
   return (
     <div className="py-8 space-y-8 text-left">
       <Container size="xl">
-        <div className="mb-8">
-          <Badge variant="primary" className="mb-2">Documentation Suite</Badge>
-          <h1 className="text-2xl font-bold font-mono text-text-primary">
-            Architecture & Engineering Specifications
-          </h1>
-          <p className="text-sm text-text-secondary mt-1 max-w-2xl">
-            Phase 0 establishes comprehensive technical contracts before implementing production features. All documents are committed in version control under <code>docs/</code>.
-          </p>
-        </div>
+        <PageHeader
+          badge="Documentation Suite"
+          title="Architecture & Engineering Specifications"
+          subtitle="Phase 0 establishes comprehensive technical contracts before implementing production features. All documents are committed in version control under docs/."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {specs.map((doc) => (

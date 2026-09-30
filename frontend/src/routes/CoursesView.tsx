@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container } from '@/components/ui/layout/Container';
+import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
 import { Badge } from '@/components/ui/data/Badge';
 import { Button } from '@/components/ui/actions/Button';
@@ -57,23 +58,12 @@ export const CoursesView: React.FC = () => {
   return (
     <div className="py-8 space-y-8 text-left">
       <Container size="xl">
-        {/* Banner */}
-        <div className="p-8 rounded border border-border bg-surface shadow-elevation-1 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">Deep-Dive Specializations</Badge>
-                <Badge variant="neutral">Hands-on Lab Curricula</Badge>
-              </div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
-                Advanced Engineering Courses
-              </h1>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                Comprehensive, code-intensive masterclasses taught through real-world systems implementations, test fixtures, and architectural diagrams.
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Standardized Sleek Page Header */}
+        <PageHeader
+          badge="Engineering Masterclasses"
+          title="Advanced Systems & Engineering Courses"
+          subtitle="Comprehensive, code-intensive masterclasses taught through real-world systems implementations, test fixtures, and architectural diagrams."
+        />
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

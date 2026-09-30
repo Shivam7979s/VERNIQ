@@ -11,6 +11,7 @@ import { LeaderboardView } from '@/routes/LeaderboardView';
 import { ProfileSettingsView } from '@/routes/ProfileSettingsView';
 import { ProfileView } from '@/routes/ProfileView';
 import { ProblemWorkspace } from '@/components/workspace/ProblemWorkspace';
+import { StandaloneIdeView } from '@/routes/StandaloneIdeView';
 import { LoginView } from '@/routes/LoginView';
 import { RegisterView } from '@/routes/RegisterView';
 import { ForgotPasswordView } from '@/routes/ForgotPasswordView';
@@ -87,6 +88,14 @@ export const App: React.FC = () => {
             element={
               <PublicLayout>
                 <CoursesView />
+              </PublicLayout>
+            }
+          />
+          <Route
+            path="/ide"
+            element={
+              <PublicLayout>
+                <StandaloneIdeView />
               </PublicLayout>
             }
           />

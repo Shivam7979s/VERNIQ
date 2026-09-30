@@ -17,6 +17,7 @@ export const Header: React.FC = () => {
     { label: 'Foundation & Tokens', href: '/' },
     { label: 'Roadmaps', href: '/roadmaps' },
     { label: 'Problems', href: '/problems' },
+    { label: 'Online IDE', href: '/ide' },
     { label: 'Leaderboard', href: '/leaderboard' },
     { label: 'Courses', href: '/courses' },
     { label: 'Architecture', href: '/architecture' },
