@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from '@/components/ui/layout/Container';
-import { DifficultyBadge, type DifficultyLevel } from '@/components/learning/DifficultyBadge';
+import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { Input } from '@/components/ui/forms/Input';
 import { Select } from '@/components/ui/forms/Select';
 import { Badge } from '@/components/ui/data/Badge';
 import { Button } from '@/components/ui/actions/Button';
+import { useProblems } from '@/hooks/useProblems';
+import { useUserProgress } from '@/hooks/useUserProgress';
 import {
   Search,
   CheckCircle2,
@@ -16,20 +18,13 @@ import {
   ArrowUpDown,
   BookOpen,
   Code2,
+  RefreshCw,
 } from 'lucide-react';
 
-interface ProblemItem {
-  id: string;
-  slug: string;
-  title: string;
-  difficulty: DifficultyLevel;
-  acceptanceRate: number;
-  tags: string[];
-  status: 'solved' | 'attempted' | 'todo';
-  revisionDue?: boolean;
-}
-
 export const ProblemsView: React.FC = () => {
+  const { problems, loading, refetch } = useProblems();
+  const { progressMap, revisionMap, toggleRevision } = useUserProgress();
+
   const [search, setSearch] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -38,110 +33,34 @@ export const ProblemsView: React.FC = () => {
   const [sortField, setSortField] = useState<'title' | 'acceptance' | 'difficulty'>('title');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
-  // Revision state map
-  const [revisionMap, setRevisionMap] = useState<Record<string, boolean>>({
-    'p-1': true,
-    'p-4': true,
-  });
-
-  const [problems] = useState<ProblemItem[]>([
-    {
-      id: 'p-1',
-      slug: 'two-sum-invariants',
-      title: 'Optimal Two-Sum & Hash Map Invariant Analysis',
-      difficulty: 'easy',
-      acceptanceRate: 82.4,
-      tags: ['Arrays', 'Hash Map', 'Proof-of-Work'],
-      status: 'solved',
-      revisionDue: true,
-    },
-    {
-      id: 'p-2',
-      slug: 'longest-substring-without-repeating',
-      title: 'Longest Substring via Dynamic Monotonic Window',
-      difficulty: 'medium',
-      acceptanceRate: 64.1,
-      tags: ['Sliding Window', 'Hash Map', 'Two Pointers'],
-      status: 'solved',
-    },
-    {
-      id: 'p-3',
-      slug: 'lru-cache-lockfree-concurrency',
-      title: 'LRU Cache with O(1) Eviction & Concurrency Controls',
-      difficulty: 'medium',
-      acceptanceRate: 48.7,
-      tags: ['Hash Map', 'Linked List', 'System Design'],
-      status: 'attempted',
-    },
-    {
-      id: 'p-4',
-      slug: 'trapping-rain-water-monotonic-stacks',
-      title: 'Trapping Rain Water via Dual Pointer & Monotonic Stacks',
-      difficulty: 'hard',
-      acceptanceRate: 38.2,
-      tags: ['Arrays', 'Two Pointers', 'Monotonic Stack'],
-      status: 'todo',
-      revisionDue: true,
-    },
-    {
-      id: 'p-5',
-      slug: 'merge-k-sorted-lists-minheap',
-      title: 'Merge K Sorted Streams with Min-Heap Invariants',
-      difficulty: 'hard',
-      acceptanceRate: 41.5,
-      tags: ['Heap', 'Linked List', 'Divide & Conquer'],
-      status: 'todo',
-    },
-    {
-      id: 'p-6',
-      slug: 'valid-parentheses-state-machine',
-      title: 'Deterministic State Machine Parentheses Validator',
-      difficulty: 'easy',
-      acceptanceRate: 89.2,
-      tags: ['Stack', 'State Machine', 'Parsing'],
-      status: 'solved',
-    },
-    {
-      id: 'p-7',
-      slug: 'course-schedule-cycle-detection',
-      title: 'Topological Sort & Kahn’s Graph Cycle Detection',
-      difficulty: 'medium',
-      acceptanceRate: 52.8,
-      tags: ['Graph', 'BFS', 'Topological Sort'],
-      status: 'todo',
-    },
-    {
-      id: 'p-8',
-      slug: 'word-search-trie-backtracking',
-      title: 'Parallel Matrix Word Search via Trie & Pruned Backtracking',
-      difficulty: 'hard',
-      acceptanceRate: 31.6,
-      tags: ['Trie', 'Backtracking', 'DFS'],
-      status: 'todo',
-    },
-  ]);
-
-  const toggleRevision = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setRevisionMap((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  // Dynamically extract all available tags from the problem set
+  const availableTags = useMemo(() => {
+    const set = new Set<string>();
+    problems.forEach((p) => {
+      (p.tags || []).forEach((t) => set.add(t));
+    });
+    return Array.from(set).sort();
+  }, [problems]);
 
   const filteredProblems = useMemo(() => {
     let result = problems.filter((prob) => {
+      const status = progressMap[prob.id] || 'todo';
+      const isRevision = Boolean(revisionMap[prob.id]);
+
       const matchesSearch =
         prob.title.toLowerCase().includes(search.toLowerCase()) ||
-        prob.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+        (prob.tags || []).some((t) => t.toLowerCase().includes(search.toLowerCase()));
+
       const matchesDifficulty =
         selectedDifficulty === 'all' || prob.difficulty === selectedDifficulty;
+
       const matchesStatus =
-        selectedStatus === 'all' || prob.status === selectedStatus;
+        selectedStatus === 'all' || status === selectedStatus;
+
       const matchesTag =
-        selectedTag === 'all' || prob.tags.includes(selectedTag);
-      const matchesRevision = !revisionOnly || Boolean(revisionMap[prob.id]);
+        selectedTag === 'all' || (prob.tags || []).includes(selectedTag);
+
+      const matchesRevision = !revisionOnly || isRevision;
 
       return matchesSearch && matchesDifficulty && matchesStatus && matchesTag && matchesRevision;
     });
@@ -151,7 +70,9 @@ export const ProblemsView: React.FC = () => {
         return sortAsc ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title);
       }
       if (sortField === 'acceptance') {
-        return sortAsc ? a.acceptanceRate - b.acceptanceRate : b.acceptanceRate - a.acceptanceRate;
+        return sortAsc
+          ? a.acceptance_rate - b.acceptance_rate
+          : b.acceptance_rate - a.acceptance_rate;
       }
       if (sortField === 'difficulty') {
         const order = { easy: 1, medium: 2, hard: 3 };
@@ -163,10 +84,21 @@ export const ProblemsView: React.FC = () => {
     });
 
     return result;
-  }, [problems, search, selectedDifficulty, selectedStatus, selectedTag, revisionOnly, revisionMap, sortField, sortAsc]);
+  }, [
+    problems,
+    progressMap,
+    revisionMap,
+    search,
+    selectedDifficulty,
+    selectedStatus,
+    selectedTag,
+    revisionOnly,
+    sortField,
+    sortAsc,
+  ]);
 
-  const solvedCount = problems.filter((p) => p.status === 'solved').length;
-  const revisionCount = Object.values(revisionMap).filter(Boolean).length;
+  const solvedCount = problems.filter((p) => progressMap[p.id] === 'solved').length;
+  const revisionCount = problems.filter((p) => Boolean(revisionMap[p.id])).length;
 
   return (
     <div className="py-8 space-y-8 text-left">
@@ -176,14 +108,14 @@ export const ProblemsView: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
-                <Badge variant="primary">Algorithmic Problem Set</Badge>
-                <Badge variant="neutral">Verified Test Suite</Badge>
+                <Badge variant="primary">Supabase Problem Engine</Badge>
+                <Badge variant="neutral">Phase 2 Dynamic Catalog</Badge>
               </div>
               <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
                 Engineering Problems & Challenges
               </h1>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Dense LeetCode-standard indexed problem repository with mathematical invariant proofs, multi-language sandbox, and spaced-repetition revision cycles.
+                Live problem repository loaded dynamically from Supabase PostgreSQL tables. Multi-language starter boilerplates, test-case verification, and real-time spaced repetition tracking.
               </p>
             </div>
 
@@ -252,13 +184,7 @@ export const ProblemsView: React.FC = () => {
                 onChange={(e) => setSelectedTag(e.target.value)}
                 options={[
                   { value: 'all', label: 'All Topics' },
-                  { value: 'Arrays', label: 'Arrays' },
-                  { value: 'Hash Map', label: 'Hash Map' },
-                  { value: 'Sliding Window', label: 'Sliding Window' },
-                  { value: 'Monotonic Stack', label: 'Monotonic Stack' },
-                  { value: 'Graph', label: 'Graph' },
-                  { value: 'Trie', label: 'Trie' },
-                  { value: 'System Design', label: 'System Design' },
+                  ...availableTags.map((tag) => ({ value: tag, label: tag })),
                 ]}
               />
             </div>
@@ -272,6 +198,17 @@ export const ProblemsView: React.FC = () => {
               className="text-xs font-mono"
             >
               Revision Queue ({revisionCount})
+            </Button>
+
+            {/* Refetch */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => refetch()}
+              title="Refresh from Supabase"
+              className="h-8 px-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : 'text-text-muted'}`} />
             </Button>
           </div>
         </div>
@@ -336,7 +273,9 @@ export const ProblemsView: React.FC = () => {
               <tbody className="divide-y divide-border">
                 {filteredProblems.length > 0 ? (
                   filteredProblems.map((prob) => {
+                    const status = progressMap[prob.id] || 'todo';
                     const isMarked = Boolean(revisionMap[prob.id]);
+
                     return (
                       <tr
                         key={prob.id}
@@ -344,17 +283,17 @@ export const ProblemsView: React.FC = () => {
                       >
                         {/* Status Icon */}
                         <td className="py-3 px-4 text-center">
-                          {prob.status === 'solved' && (
+                          {status === 'solved' && (
                             <span title="Solved">
                               <CheckCircle2 className="w-4 h-4 text-verdict-ac inline" />
                             </span>
                           )}
-                          {prob.status === 'attempted' && (
+                          {status === 'attempted' && (
                             <span title="Attempted">
                               <Clock className="w-4 h-4 text-warning inline" />
                             </span>
                           )}
-                          {prob.status === 'todo' && (
+                          {status === 'todo' && (
                             <span title="Todo">
                               <Circle className="w-4 h-4 text-text-muted inline" />
                             </span>
@@ -386,10 +325,10 @@ export const ProblemsView: React.FC = () => {
                             <div className="w-12 bg-surface-subtle h-1.5 rounded-full overflow-hidden">
                               <div
                                 className="bg-primary h-full"
-                                style={{ width: `${prob.acceptanceRate}%` }}
+                                style={{ width: `${Math.min(100, Math.max(0, prob.acceptance_rate))}%` }}
                               />
                             </div>
-                            <span className="text-text-secondary">{prob.acceptanceRate}%</span>
+                            <span className="text-text-secondary">{prob.acceptance_rate}%</span>
                           </div>
                         </td>
 
@@ -401,7 +340,7 @@ export const ProblemsView: React.FC = () => {
                         {/* Tags */}
                         <td className="py-3 px-4 hidden md:table-cell">
                           <div className="flex flex-wrap gap-1">
-                            {prob.tags.map((tag) => (
+                            {(prob.tags || []).map((tag) => (
                               <span
                                 key={tag}
                                 className="px-1.5 py-0.5 rounded border border-border bg-surface-elevated text-[11px] text-text-secondary"
@@ -415,7 +354,11 @@ export const ProblemsView: React.FC = () => {
                         {/* Revision Badge Button */}
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={(e) => toggleRevision(prob.id, e)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleRevision(prob.id);
+                            }}
                             className={`px-2 py-1 rounded text-[11px] font-mono flex items-center justify-center gap-1 mx-auto transition-colors border ${
                               isMarked
                                 ? 'border-warning/40 bg-warning/10 text-warning font-semibold'
@@ -456,7 +399,7 @@ export const ProblemsView: React.FC = () => {
                 ) : (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-text-muted">
-                      No problems match your current search and filter parameters.
+                      {loading ? 'Loading problems from Supabase...' : 'No problems match your current search and filter parameters.'}
                     </td>
                   </tr>
                 )}

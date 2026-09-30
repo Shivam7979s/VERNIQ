@@ -103,3 +103,85 @@ export interface RoadmapMilestone {
   estimatedDuration: string;
   status: CompletionStatus;
 }
+
+export type ProblemStatus = 'todo' | 'attempted' | 'solved';
+
+export interface ProblemTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface TestCase {
+  id: string;
+  problem_id: string;
+  input: string;
+  expected_output: string;
+  is_sample: boolean;
+  order_index: number;
+}
+
+export interface Problem {
+  id: string;
+  title: string;
+  slug: string;
+  difficulty: DifficultyLevel;
+  acceptance_rate: number;
+  description_markdown: string;
+  constraints_markdown: string;
+  starter_templates: Record<string, string>;
+  is_premium: boolean;
+  is_published: boolean;
+  tags?: string[];
+  status?: ProblemStatus;
+  revision_due?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RoadmapTopic {
+  id: string;
+  step_id: string;
+  title: string;
+  order_index: number;
+  problems?: Problem[];
+}
+
+export interface RoadmapStep {
+  id: string;
+  roadmap_id: string;
+  title: string;
+  order_index: number;
+  topics?: RoadmapTopic[];
+}
+
+export interface Roadmap {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  icon_name?: string;
+  order_index: number;
+  is_published: boolean;
+  steps?: RoadmapStep[];
+}
+
+export interface UserProblemProgress {
+  id?: string;
+  user_id: string;
+  problem_id: string;
+  status: ProblemStatus;
+  solved_at?: string | null;
+  notes?: string | null;
+  is_favorite?: boolean;
+}
+
+export interface UserRevisionItem {
+  id?: string;
+  user_id: string;
+  problem_id: string;
+  interval_days: number;
+  next_review_at: string;
+  is_reviewed: boolean;
+}
+
