@@ -4,14 +4,14 @@
   "private": true,
   "description": "VERNIQ — Production-grade engineering learning and career platform",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "frontend",
+    "backend/*"
   ],
   "scripts": {
-    "dev": "npm --workspace=apps/web run dev",
-    "build": "npm --workspace=apps/web run build",
-    "lint": "npm --workspace=apps/web run lint",
-    "typecheck": "npm --workspace=apps/web run typecheck"
+    "dev": "npm --workspace=frontend run dev",
+    "build": "npm --workspace=frontend run build",
+    "lint": "npm --workspace=frontend run lint",
+    "typecheck": "npm --workspace=frontend run typecheck"
   },
   "keywords": [
     "verniq",
@@ -22,5 +22,9 @@
     "system-design"
   ],
   "author": "VERNIQ Core Engineering Team",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2"
+  }
 }

@@ -220,8 +220,41 @@ export const FoundationView: React.FC = () => {
                       <div className="text-xs font-semibold text-text-primary">Amber Attention</div>
                     </div>
                     <div className="p-3 rounded border border-error/30 bg-error/10 space-y-1">
-                      <div className="text-[11px] font-mono text-error font-bold">ERROR (WA)</div>
+                      <div className="text-[11px] font-mono text-error font-bold">ERROR</div>
                       <div className="text-xs font-semibold text-text-primary">Crimson Failure</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="text-xs font-mono font-bold text-text-muted uppercase mb-3">
+                    Execution Verdict Tokens (Isolated Judge Evaluation)
+                  </h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="p-3 rounded border border-verdict-ac/30 bg-verdict-ac/10 space-y-1">
+                      <div className="text-[11px] font-mono text-verdict-ac font-bold">AC</div>
+                      <div className="text-xs font-semibold text-text-primary">Accepted</div>
+                      <div className="text-[10px] font-mono text-text-muted">--verdict-ac</div>
+                    </div>
+                    <div className="p-3 rounded border border-verdict-wa/30 bg-verdict-wa/10 space-y-1">
+                      <div className="text-[11px] font-mono text-verdict-wa font-bold">WA</div>
+                      <div className="text-xs font-semibold text-text-primary">Wrong Answer</div>
+                      <div className="text-[10px] font-mono text-text-muted">--verdict-wa</div>
+                    </div>
+                    <div className="p-3 rounded border border-verdict-tle/30 bg-verdict-tle/10 space-y-1">
+                      <div className="text-[11px] font-mono text-verdict-tle font-bold">TLE</div>
+                      <div className="text-xs font-semibold text-text-primary">Time Limit</div>
+                      <div className="text-[10px] font-mono text-text-muted">--verdict-tle</div>
+                    </div>
+                    <div className="p-3 rounded border border-verdict-mle/30 bg-verdict-mle/10 space-y-1">
+                      <div className="text-[11px] font-mono text-verdict-mle font-bold">MLE</div>
+                      <div className="text-xs font-semibold text-text-primary">Memory Limit</div>
+                      <div className="text-[10px] font-mono text-text-muted">--verdict-mle</div>
+                    </div>
+                    <div className="p-3 rounded border border-verdict-ce/30 bg-verdict-ce/10 space-y-1">
+                      <div className="text-[11px] font-mono text-verdict-ce font-bold">CE / RE</div>
+                      <div className="text-xs font-semibold text-text-primary">Compile / Runtime</div>
+                      <div className="text-[10px] font-mono text-text-muted">--verdict-ce</div>
                     </div>
                   </div>
                 </div>

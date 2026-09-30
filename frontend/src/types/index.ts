@@ -19,13 +19,18 @@ export type SubmissionVerdict =
 export type CompletionStatus = 'completed' | 'in_progress' | 'pending';
 
 export interface UserProfile {
-  id: string; // UUID
-  username: string;
-  fullName: string;
-  avatarUrl?: string;
-  role: UserRole;
-  createdAt: string; // ISO 8601
-  updatedAt: string;
+  id: string; // UUID references auth.users(id)
+  username: string; // CITEXT
+  full_name: string; // TEXT
+  avatar_url?: string | null;
+  role: UserRole; // app_role enum
+  bio?: string | null;
+  github_username?: string | null;
+  linkedin_url?: string | null;
+  current_streak: number;
+  max_streak: number;
+  created_at: string; // ISO 8601
+  updated_at: string;
 }
 
 export interface ProblemSummary {

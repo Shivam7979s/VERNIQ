@@ -42,10 +42,17 @@ export default {
           active: 'var(--progress-active)',
           pending: 'var(--progress-pending)',
         },
+        verdict: {
+          ac: 'var(--verdict-ac)',
+          wa: 'var(--verdict-wa)',
+          tle: 'var(--verdict-tle)',
+          mle: 'var(--verdict-mle)',
+          ce: 'var(--verdict-ce)',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Menlo', 'Consolas', 'monospace'],
       },
       borderRadius: {
         sm: 'var(--radius-sm)',

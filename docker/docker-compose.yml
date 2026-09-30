@@ -4,7 +4,7 @@ services:
   # AI Microservice (FastAPI)
   ai-service:
     build:
-      context: ../services/ai
+      context: ../backend/ai
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -17,7 +17,7 @@ services:
   # Online Judge Worker (Local Sandbox Container)
   judge-worker:
     build:
-      context: ../services/judge
+      context: ../backend/judge
       dockerfile: Dockerfile
     environment:
       - WORKER_ENV=development

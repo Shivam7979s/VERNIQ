@@ -14,8 +14,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   FolderGit2,
+  LogOut,
 } from 'lucide-react';
 import { IconButton } from '../actions/IconButton';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface SidebarProps {
   collapsed?: boolean;
@@ -26,6 +28,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   collapsed = false,
   onToggleCollapse,
 }) => {
+  const { profile, user, signOut } = useAuth();
+  const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || 'Engineer Account';
+  const roleName = profile?.role || 'student';
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'VN';
   return (
     <aside
       className={`h-screen sticky top-0 border-r border-border bg-surface flex flex-col justify-between transition-all duration-base z-dock ${
@@ -143,15 +154,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label="Settings"
           collapsed={collapsed}
         />
-        <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-3 px-3 py-1.5">
-          <div className="w-7 h-7 rounded-full bg-primary/20 text-primary font-mono text-xs flex items-center justify-center font-bold shrink-0">
-            VN
+        <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between px-3 py-1.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-primary/20 text-primary font-mono text-xs flex items-center justify-center font-bold shrink-0">
+              {initials}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 text-left">
+                <p className="text-[12px] font-semibold text-text-primary truncate">{displayName}</p>
+                <p className="text-[10px] text-text-muted font-mono truncate capitalize">Role: {roleName}</p>
+              </div>
+            )}
           </div>
           {!collapsed && (
-            <div className="min-w-0 text-left">
-              <p className="text-[12px] font-semibold text-text-primary truncate">Engineer Account</p>
-              <p className="text-[10px] text-text-muted font-mono truncate">Role: Student</p>
-            </div>
+            <IconButton
+              size="sm"
+              variant="ghost"
+              aria-label="Sign out"
+              icon={<LogOut className="w-3.5 h-3.5 text-text-muted hover:text-error" />}
+              onClick={() => signOut()}
+            />
           )}
         </div>
       </div>

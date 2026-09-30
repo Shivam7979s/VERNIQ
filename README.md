@@ -23,15 +23,11 @@ VERNIQ is structured as a modular monorepo:
 
 ```
 verniq/
-├── apps/
-│   └── web/                  # Primary React + TypeScript + Vite web application
-├── services/
+├── frontend/                 # Primary React + TypeScript + Vite web application
+├── backend/                  # Backend services and data layer
 │   ├── ai/                   # FastAPI microservice for LLM orchestration & RAG
-│   └── judge/                # Isolated code execution sandbox and judge gateway
-├── supabase/
-│   ├── migrations/           # Version-controlled, immutable PostgreSQL migrations
-│   ├── functions/            # Supabase Edge Functions (Deno/TypeScript)
-│   └── seed/                 # Controlled developmental seed data
+│   ├── judge/                # Isolated code execution sandbox and judge gateway
+│   └── supabase/             # PostgreSQL migrations, Edge Functions, and seed data
 ├── packages/                 # Shared TypeScript utilities, types, and configs
 ├── docs/                     # Comprehensive architectural and design specifications
 │   ├── architecture/         # System, Information, Repository, and Supabase docs

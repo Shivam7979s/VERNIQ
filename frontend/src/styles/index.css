@@ -47,3 +47,10 @@
     }
   }
 }
+
+@layer utilities {
+  .tab-size-2 {
+    tab-size: 2;
+    -moz-tab-size: 2;
+  }
+}

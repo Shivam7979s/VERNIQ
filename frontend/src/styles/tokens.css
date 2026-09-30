@@ -40,6 +40,13 @@
   --progress-active: #2563EB;
   --progress-pending: #94A3B8;
 
+  /* Execution Verdicts - Light Mode */
+  --verdict-ac: #059669;
+  --verdict-wa: #DC2626;
+  --verdict-tle: #D97706;
+  --verdict-mle: #7C3AED;
+  --verdict-ce: #EA580C;
+
   /* Border Radius */
   --radius-none: 0px;
   --radius-sm: 3px;
@@ -73,9 +80,9 @@
   --color-text-muted: #64748B;
   --color-text-inverse: #0F172A;
 
-  /* Borders - Dark Mode */
-  --color-border: #1E293B;
-  --color-border-strong: #334155;
+  /* Borders - Dark Mode (Crisp 1px structural lines) */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
   --color-border-focus: #60A5FA;
 
   /* Brand / Semantic - Dark Mode */
@@ -95,6 +102,13 @@
   --progress-complete: #10B981;
   --progress-active: #3B82F6;
   --progress-pending: #64748B;
+
+  /* Execution Verdicts - Dark Mode */
+  --verdict-ac: #10B981;
+  --verdict-wa: #EF4444;
+  --verdict-tle: #F59E0B;
+  --verdict-mle: #8B5CF6;
+  --verdict-ce: #F97316;
 
   /* Elevation Shadows - Dark Mode */
   --elevation-border: 0 0 0 1px var(--color-border);

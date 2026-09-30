@@ -2,12 +2,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 import { Sun, Moon, Search, Terminal, Menu, X } from 'lucide-react';
 import { Button } from '../actions/Button';
 import { IconButton } from '../actions/IconButton';
 
 export const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user, profile } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
 
@@ -82,11 +84,26 @@ export const Header: React.FC = () => {
           />
 
           {/* App / Auth Link */}
-          <Link to="/app/dashboard">
-            <Button size="sm" variant="primary">
-              Student App
-            </Button>
-          </Link>
+          {user ? (
+            <Link to="/app/dashboard">
+              <Button size="sm" variant="primary">
+                {profile?.username || 'Dashboard'}
+              </Button>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <Link to="/login">
+                <Button size="sm" variant="secondary">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/register" className="hidden sm:inline-block">
+                <Button size="sm" variant="primary">
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
+          )}
 
           {/* Mobile menu trigger */}
           <div className="md:hidden">
@@ -114,6 +131,34 @@ export const Header: React.FC = () => {
               {link.label}
             </Link>
           ))}
+          <div className="pt-2 mt-1 border-t border-border flex flex-col gap-1.5">
+            {user ? (
+              <Link
+                to="/app/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded text-[13px] font-medium text-primary hover:bg-surface-subtle text-left"
+              >
+                Go to Workspace ({profile?.username || 'Dashboard'})
+              </Link>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-1.5 rounded text-[13px] font-medium border border-border text-text-primary text-center hover:bg-surface-subtle"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-1.5 rounded text-[13px] font-medium bg-primary text-text-inverse text-center"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>
