@@ -8,7 +8,9 @@ import { FormField } from '@/components/ui/forms/FormField';
 import { Alert } from '@/components/ui/feedback/Alert';
 import { Badge } from '@/components/ui/data/Badge';
 import { GithubIcon } from '@/components/ui/icons/GithubIcon';
-import { Terminal, Mail, Lock, User, AtSign, ArrowRight } from 'lucide-react';
+import { Combobox } from '@/components/ui/forms/Combobox';
+import { SEEDED_COLLEGES } from '@/lib/colleges';
+import { Terminal, Mail, Lock, User, AtSign, ArrowRight, Building2 } from 'lucide-react';
 
 export const RegisterView: React.FC = () => {
   const { signUpWithEmail, signInWithGitHub, isConfigured } = useAuth();
@@ -16,6 +18,8 @@ export const RegisterView: React.FC = () => {
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
+  const [collegeId, setCollegeId] = useState('col-iitb');
+  const [collegeName, setCollegeName] = useState('Indian Institute of Technology Bombay');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +54,9 @@ export const RegisterView: React.FC = () => {
       email.trim(),
       password,
       username.trim(),
-      fullName.trim()
+      fullName.trim(),
+      collegeId,
+      collegeName
     );
     setLoading(false);
 
@@ -155,6 +161,29 @@ export const RegisterView: React.FC = () => {
                   />
                 )}
               </FormField>
+
+              <div className="space-y-1.5 text-left">
+                <label className="text-[12px] font-medium text-text-primary tracking-wide flex items-center justify-between">
+                  <span>
+                    College / University Institution <span className="text-error ml-1">*</span>
+                  </span>
+                  <span className="text-[10px] text-text-muted font-mono">Campus League</span>
+                </label>
+                <Combobox
+                  options={SEEDED_COLLEGES.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                    subtitle: `${c.state || ''}, ${c.country} • ${c.student_count} Students`,
+                  }))}
+                  value={collegeId}
+                  onChange={(val, opt) => {
+                    setCollegeId(val);
+                    if (opt) setCollegeName(opt.label);
+                  }}
+                  placeholder="Select or enter your engineering college..."
+                  leftIcon={<Building2 className="w-4 h-4" />}
+                />
+              </div>
 
               <FormField
                 id="register-username"

@@ -82,3 +82,57 @@
 ### 3.4 Missed Tasks & Daily Study Capacity
 - If a student misses a scheduled study plan day, VERNIQ **never shames the user** with aggressive guilt-inducing copy or broken red streaks.
 - Instead, the system offers an intelligent "Rebalance Schedule" action that evenly redistributes remaining milestones across upcoming days.
+
+---
+
+## 4. LeetCode-Inspired Workspace Mechanics
+
+### 4.1 Split-Pane Coding Workspace
+- **Dual-Pane Topology:** The core coding environment is partitioned into two primary horizontal regions:
+  1. *Left Pane (Problem Specification):* Markdown problem description, constraints table, input/output schemas, test case visualizations, and editorial discussion hints.
+  2. *Right Pane (Code Editor & Execution Console):* Monaco/CodeMirror code editor on top, with a collapsible execution drawer below.
+- **Draggable Splitter Handle:** 4px draggable divider with active hover focus states. Allows fluid redistribution of viewport area between problem reading and coding.
+- **Responsive Stacking:** On viewports `< 1024px`, the workspace seamlessly collapses into full-width tabs (`Description` vs. `Code & Console`).
+
+### 4.2 Bottom Test-Case Console Architecture
+- **Tab Hierarchy:**
+  - `Test Cases`: Pre-populated sample inputs matching the problem statement with pass/fail badges.
+  - `Custom Input`: User-editable text field enabling arbitrary test execution without submitting.
+  - `Expected Output`: Canonical reference output for the active input test case.
+  - `Stdout & Runtime`: Execution logs, memory allocation (`MB`), execution duration (`ms`), and compiler stderr traces formatted in monospace font.
+- **Verdict Chips:** Execution results consume the centralized verdict tokens (`--verdict-ac`, `--verdict-wa`, `--verdict-tle`, `--verdict-mle`, `--verdict-ce`) with WCAG 2.2 AA contrast.
+
+### 4.3 Dense Problem Index Table
+- **Information Density:** High scannability layout displaying Status (`Solved`, `Attempted`, `Todo`), Problem Title, Acceptance Rate, Algorithmic Difficulty (`Easy`, `Medium`, `Hard`), and Topic Tags.
+- **Instant Sorting:** Clickable column headers supporting multi-column sort (Difficulty, Acceptance Rate, Title).
+
+---
+
+## 5. TakeUForward (TUF)-Inspired Pedagogical Mechanics
+
+### 5.1 Hierarchical Stepper & Curriculum Sheets
+- **3-Tier Pedagogical Structure:**
+  - *Step (Course Level):* High-level engineering phase (e.g. "Step 1: Learn the Basics", "Step 3: Solve Problems on Arrays").
+  - *Sub-step (Topic Level):* Thematic sub-cluster (e.g. "Medium Array Problems", "Sliding Window Techniques").
+  - *Problem Node:* Concrete algorithmic challenge with difficulty indicators and revision triggers.
+- **Collapsible Stepper Panels:** Accordion headers show real-time fraction solved (`8/14 Solved`), aggregate progress bar, and completion checkmarks.
+
+### 5.2 Micro-Interactions & Checkbox Completion Tracking
+- **Optimistic State Tracking:** Clicking the completion checkbox instantly updates the sub-step progress bar, topic counter, and overall curriculum percentage prior to server roundtrip.
+- **Spaced-Repetition Revision Badges:**
+  - `Mark for Revision`: Star/bookmark icon that schedules the question for review.
+  - `Revision Due`: Visual badge indicating the Ebbinghaus forgetting curve interval (Day 1, 3, 7, 21) has lapsed and requires active recall.
+
+---
+
+## 6. Campus Identity & Competitive Leaderboard Mechanics
+
+### 6.1 Three-Dimensional Standings Matrix
+- **Global Standings:** Real-time platform-wide ranking sorted by `score DESC, problems_solved_count DESC`.
+- **My College Standings:** Intracampus peer ranking displaying only students enrolled in the same verified college entity (`view_college_leaderboard`).
+- **Campus League:** Intercollegiate leaderboard ranking universities and colleges by aggregate student performance (`view_top_colleges`).
+
+### 6.2 User Highlight Pinning
+- In any leaderboard view exceeding 10 rows, a sticky or highlighted summary card is pinned at the bottom or top of the viewport indicating:
+  *"Your Current Standing: Rank #12 in IIT Bombay (Top 4%) | 850 Points | 42 Solved"*.
+- Tabular figures use `font-mono tabular-nums` for crisp numeric alignment.

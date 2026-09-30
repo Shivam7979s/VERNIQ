@@ -7,6 +7,9 @@ import { ArchitectureView } from '@/routes/ArchitectureView';
 import { RoadmapsView } from '@/routes/RoadmapsView';
 import { ProblemsView } from '@/routes/ProblemsView';
 import { CoursesView } from '@/routes/CoursesView';
+import { LeaderboardView } from '@/routes/LeaderboardView';
+import { ProfileSettingsView } from '@/routes/ProfileSettingsView';
+import { ProblemWorkspace } from '@/components/workspace/ProblemWorkspace';
 import { LoginView } from '@/routes/LoginView';
 import { RegisterView } from '@/routes/RegisterView';
 import { ForgotPasswordView } from '@/routes/ForgotPasswordView';
@@ -59,6 +62,22 @@ export const App: React.FC = () => {
             element={
               <PublicLayout>
                 <ProblemsView />
+              </PublicLayout>
+            }
+          />
+          <Route
+            path="/problems/:slug"
+            element={
+              <PublicLayout>
+                <ProblemWorkspace />
+              </PublicLayout>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <PublicLayout>
+                <LeaderboardView />
               </PublicLayout>
             }
           />
@@ -233,14 +252,7 @@ export const App: React.FC = () => {
             path="/app/settings"
             element={
               <ProtectedRoute>
-                <WorkspaceSubView
-                  title="Account & Preferences"
-                  moduleName="Profile Settings"
-                  phaseTarget="Phase 1"
-                  description="Manage authentication, GitHub link, notification channels, and UI tokens."
-                  emptyTitle="Preferences Baseline Active"
-                  emptyDescription="Account persistence and Supabase Auth session settings will be active in Phase 1."
-                />
+                <ProfileSettingsView />
               </ProtectedRoute>
             }
           />

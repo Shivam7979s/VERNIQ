@@ -18,6 +18,17 @@ export type SubmissionVerdict =
 
 export type CompletionStatus = 'completed' | 'in_progress' | 'pending';
 
+export interface College {
+  id: string;
+  name: string;
+  slug: string;
+  state?: string | null;
+  country?: string | null;
+  student_count: number;
+  total_score: number;
+  created_at?: string;
+}
+
 export interface UserProfile {
   id: string; // UUID references auth.users(id)
   username: string; // CITEXT
@@ -27,10 +38,51 @@ export interface UserProfile {
   bio?: string | null;
   github_username?: string | null;
   linkedin_url?: string | null;
+  college_id?: string | null;
+  college_name?: string | null;
+  score: number;
+  problems_solved_count: number;
   current_streak: number;
   max_streak: number;
   created_at: string; // ISO 8601
   updated_at: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url?: string | null;
+  college_name?: string | null;
+  college_id?: string | null;
+  problems_solved_count: number;
+  score: number;
+  current_streak?: number;
+}
+
+export interface CollegeLeaderboardEntry {
+  college_rank: number;
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url?: string | null;
+  college_id: string;
+  college_name: string;
+  problems_solved_count: number;
+  score: number;
+  current_streak?: number;
+}
+
+export interface CampusLeagueEntry {
+  rank: number;
+  id: string;
+  name: string;
+  slug: string;
+  state?: string | null;
+  country?: string | null;
+  student_count: number;
+  total_score: number;
 }
 
 export interface ProblemSummary {

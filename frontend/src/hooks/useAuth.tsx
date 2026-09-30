@@ -14,12 +14,15 @@ export interface AuthContextType {
     email: string,
     password: string,
     username: string,
-    fullName: string
+    fullName: string,
+    collegeId?: string,
+    collegeName?: string
   ) => Promise<{ error: Error | null }>;
   signInWithGitHub: () => Promise<{ error: Error | null }>;
   resetPasswordForEmail: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateCollege: (collegeId: string, collegeName: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,7 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bio: 'Systems and Algorithms Engineer',
         github_username: null,
         linkedin_url: null,
-        current_streak: 1,
+        college_id: (userMeta?.college_id as string) || 'col-iitb',
+        college_name: (userMeta?.college_name as string) || 'Indian Institute of Technology Bombay',
+        score: 820,
+        problems_solved_count: 42,
+        current_streak: 3,
         max_streak: 14,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -57,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, colleges:college_id(name)')
         .eq('id', userId)
         .single();
 
@@ -72,13 +79,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           bio: null,
           github_username: null,
           linkedin_url: null,
+          college_id: (userMeta?.college_id as string) || null,
+          college_name: (userMeta?.college_name as string) || null,
+          score: 0,
+          problems_solved_count: 0,
           current_streak: 0,
           max_streak: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
       } else if (data) {
-        setProfile(data as UserProfile);
+        const collegeObj = data.colleges as { name?: string } | null;
+        setProfile({
+          ...(data as UserProfile),
+          college_name: collegeObj?.name || null,
+        });
       }
     } catch {
       // Graceful fallback
@@ -147,7 +162,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mockUser: User = {
         id: mockId,
         app_metadata: {},
-        user_metadata: { full_name: isRoleAdmin ? 'Administrator' : 'Test Engineer', username: email.split('@')[0] },
+        user_metadata: {
+          full_name: isRoleAdmin ? 'Administrator' : 'Aarav Sharma',
+          username: email.split('@')[0],
+          college_id: isRoleAdmin ? 'col-iiith' : 'col-iitb',
+          college_name: isRoleAdmin ? 'International Institute of Information Technology, Hyderabad' : 'Indian Institute of Technology Bombay',
+        },
         aud: 'authenticated',
         created_at: new Date().toISOString(),
         email,
@@ -164,14 +184,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mockProfile: UserProfile = {
         id: mockId,
         username: email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 15) || 'student_dev',
-        full_name: isRoleAdmin ? 'System Admin' : 'Engineer Student',
+        full_name: isRoleAdmin ? 'Administrator' : 'Aarav Sharma',
         avatar_url: null,
         role: (isRoleAdmin ? 'admin' : 'student') as UserRole,
-        bio: 'VERNIQ Engineering Platform Member',
-        github_username: null,
+        bio: 'Systems and Algorithms Engineer @ VERNIQ',
+        github_username: 'aarav-code',
         linkedin_url: null,
-        current_streak: 3,
-        max_streak: 12,
+        college_id: isRoleAdmin ? 'col-iiith' : 'col-iitb',
+        college_name: isRoleAdmin ? 'International Institute of Information Technology, Hyderabad' : 'Indian Institute of Technology Bombay',
+        score: isRoleAdmin ? 1480 : 890,
+        problems_solved_count: isRoleAdmin ? 76 : 48,
+        current_streak: 5,
+        max_streak: 18,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -206,14 +230,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string,
     password: string,
     username: string,
-    fullName: string
+    fullName: string,
+    collegeId?: string,
+    collegeName?: string
   ): Promise<{ error: Error | null }> => {
     if (!configured) {
       const mockId = 'mock-' + Math.random().toString(36).substring(2, 9);
       const mockUser: User = {
         id: mockId,
         app_metadata: {},
-        user_metadata: { full_name: fullName, username },
+        user_metadata: { full_name: fullName, username, college_id: collegeId, college_name: collegeName },
         aud: 'authenticated',
         created_at: new Date().toISOString(),
         email,
@@ -236,8 +262,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bio: 'VERNIQ Engineering Platform Member',
         github_username: null,
         linkedin_url: null,
-        current_streak: 0,
-        max_streak: 0,
+        college_id: collegeId || null,
+        college_name: collegeName || null,
+        score: 100,
+        problems_solved_count: 5,
+        current_streak: 1,
+        max_streak: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -260,14 +290,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             username,
             full_name: fullName,
+            college_id: collegeId,
           },
         },
       });
 
       if (error) return { error };
       if (data.user) {
-        await fetchProfile(data.user.id, { username, full_name: fullName }, email);
+        await fetchProfile(data.user.id, { username, full_name: fullName, college_id: collegeId }, email);
       }
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  const updateCollege = async (collegeId: string, collegeName: string): Promise<{ error: Error | null }> => {
+    if (!profile) return { error: new Error('User not authenticated') };
+
+    if (!configured) {
+      const updatedProfile = {
+        ...profile,
+        college_id: collegeId,
+        college_name: collegeName,
+        updated_at: new Date().toISOString(),
+      };
+      setProfile(updatedProfile);
+      if (user && session) {
+        localStorage.setItem(
+          MOCK_AUTH_STORAGE_KEY,
+          JSON.stringify({ user, session, profile: updatedProfile })
+        );
+      }
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ college_id: collegeId })
+        .eq('id', profile.id);
+
+      if (error) return { error };
+      setProfile((prev) => (prev ? { ...prev, college_id: collegeId, college_name: collegeName } : null));
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -338,6 +403,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPasswordForEmail,
         signOut,
         refreshProfile,
+        updateCollege,
       }}
     >
       {children}
