@@ -1,0 +1,104 @@
+/* ==============================================================================
+   VERNIQ DESIGN SYSTEM TOKENS
+   Canonical source of truth for all color, elevation, radius, and motion tokens.
+   ============================================================================== */
+
+:root {
+  /* Surfaces & Backgrounds - Light Mode */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F1F5F9;
+  --color-surface-subtle: #E2E8F0;
+  --color-surface-sunken: #E2E8F0;
+
+  /* Typography / Text - Light Mode */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #FFFFFF;
+
+  /* Borders - Light Mode */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #2563EB;
+
+  /* Brand / Semantic - Light Mode */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-subtle: #EFF6FF;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  /* Difficulty - Light Mode */
+  --difficulty-easy: #059669;
+  --difficulty-medium: #D97706;
+  --difficulty-hard: #DC2626;
+
+  /* Progress - Light Mode */
+  --progress-complete: #10B981;
+  --progress-active: #2563EB;
+  --progress-pending: #94A3B8;
+
+  /* Border Radius */
+  --radius-none: 0px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Elevation Shadows */
+  --elevation-border: 0 0 0 1px var(--color-border);
+  --elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px var(--color-border);
+  --elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--color-border);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--color-border-strong);
+
+  /* Motion */
+  --motion-fast: 100ms;
+  --motion-base: 150ms;
+  --motion-slow: 250ms;
+}
+
+.dark {
+  /* Surfaces & Backgrounds - Dark Mode */
+  --color-background: #0B0F17;
+  --color-surface: #111827;
+  --color-surface-elevated: #1E293B;
+  --color-surface-subtle: #172033;
+  --color-surface-sunken: #080C14;
+
+  /* Typography / Text - Dark Mode */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #0F172A;
+
+  /* Borders - Dark Mode */
+  --color-border: #1E293B;
+  --color-border-strong: #334155;
+  --color-border-focus: #60A5FA;
+
+  /* Brand / Semantic - Dark Mode */
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-primary-subtle: #1E2A4A;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  /* Difficulty - Dark Mode */
+  --difficulty-easy: #34D399;
+  --difficulty-medium: #FBBF24;
+  --difficulty-hard: #F87171;
+
+  /* Progress - Dark Mode */
+  --progress-complete: #10B981;
+  --progress-active: #3B82F6;
+  --progress-pending: #64748B;
+
+  /* Elevation Shadows - Dark Mode */
+  --elevation-border: 0 0 0 1px var(--color-border);
+  --elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px var(--color-border);
+  --elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--color-border);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--color-border-strong);
+}

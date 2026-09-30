@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # AI Microservice (FastAPI)
+  ai-service:
+    build:
+      context: ../services/ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - SUPABASE_URL=http://host.docker.internal:54321
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Online Judge Worker (Local Sandbox Container)
+  judge-worker:
+    build:
+      context: ../services/judge
+      dockerfile: Dockerfile
+    environment:
+      - WORKER_ENV=development
+      - MAX_CONCURRENT_JOBS=2
