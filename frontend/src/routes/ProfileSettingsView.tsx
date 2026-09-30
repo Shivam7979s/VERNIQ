@@ -10,7 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { Stat } from '@/components/ui/data/Stat';
 import { Badge } from '@/components/ui/data/Badge';
-import { Building2, User, Trophy, Flame, CheckCircle, Save, AtSign, Github } from 'lucide-react';
+import { Building2, User, Trophy, Flame, CheckCircle, Save, AtSign } from 'lucide-react';
+import { GithubIcon } from '@/components/ui/icons/GithubIcon';
 
 export const ProfileSettingsView: React.FC = () => {
   const { profile, updateCollege } = useAuth();
@@ -164,7 +165,7 @@ export const ProfileSettingsView: React.FC = () => {
                       placeholder="github-handle"
                       value={githubUser}
                       onChange={(e) => setGithubUser(e.target.value)}
-                      leftIcon={<Github className="w-4 h-4" />}
+                      leftIcon={<GithubIcon className="w-4 h-4" />}
                     />
                   )}
                 </FormField>

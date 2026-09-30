@@ -5,16 +5,12 @@ import { Badge } from '@/components/ui/data/Badge';
 import { Button } from '@/components/ui/actions/Button';
 import { DifficultyBadge, type DifficultyLevel } from '@/components/learning/DifficultyBadge';
 import {
-  Compass,
   ChevronDown,
   ChevronRight,
   Bookmark,
   BookmarkCheck,
   CheckCircle2,
-  ExternalLink,
   Code2,
-  Sparkles,
-  BookOpen,
 } from 'lucide-react';
 
 interface SheetProblem {

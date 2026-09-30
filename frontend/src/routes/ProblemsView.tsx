@@ -16,7 +16,6 @@ import {
   ArrowUpDown,
   BookOpen,
   Code2,
-  Sparkles,
 } from 'lucide-react';
 
 interface ProblemItem {
@@ -346,13 +345,19 @@ export const ProblemsView: React.FC = () => {
                         {/* Status Icon */}
                         <td className="py-3 px-4 text-center">
                           {prob.status === 'solved' && (
-                            <CheckCircle2 className="w-4 h-4 text-verdict-ac inline" title="Solved" />
+                            <span title="Solved">
+                              <CheckCircle2 className="w-4 h-4 text-verdict-ac inline" />
+                            </span>
                           )}
                           {prob.status === 'attempted' && (
-                            <Clock className="w-4 h-4 text-warning inline" title="Attempted" />
+                            <span title="Attempted">
+                              <Clock className="w-4 h-4 text-warning inline" />
+                            </span>
                           )}
                           {prob.status === 'todo' && (
-                            <Circle className="w-4 h-4 text-text-muted inline" title="Todo" />
+                            <span title="Todo">
+                              <Circle className="w-4 h-4 text-text-muted inline" />
+                            </span>
                           )}
                         </td>
 
