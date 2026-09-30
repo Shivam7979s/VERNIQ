@@ -8,12 +8,9 @@ import { useProblemBySlug } from '@/hooks/useProblemBySlug';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import {
   ChevronLeft,
-  Bookmark,
-  BookmarkCheck,
   RotateCcw,
   Copy,
   Check,
-  Sparkles,
   FileCode,
   History,
   BookOpen,
@@ -21,6 +18,8 @@ import {
   Play,
   Pause,
   RefreshCw,
+  Lightbulb,
+  Star,
 } from 'lucide-react';
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -39,7 +38,7 @@ export const ProblemWorkspace: React.FC = () => {
 
   const [language, setLanguage] = useState<string>('cpp');
   const [code, setCode] = useState<string>('');
-  const [leftTab, setLeftTab] = useState<'description' | 'invariants' | 'submissions' | 'hints'>('description');
+  const [leftTab, setLeftTab] = useState<'description' | 'editorial' | 'solutions' | 'submissions'>('description');
   const [customInput, setCustomInput] = useState<string>('');
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -105,7 +104,7 @@ export const ProblemWorkspace: React.FC = () => {
       setRuntimeMs(18);
       setMemoryMb(14.8);
       setStdoutLogs(
-        `[SANDBOX_OK] Exit status: 0\n[PROFILER] CPU time: 18ms (faster than 88.4% of C++ submissions)\n[MEMORY] Peak virtual memory: 14.8MB\nAll ${sampleTestCases.length} visible test cases passed.`
+        `[SANDBOX_OK] Exit status: 0\n[PROFILER] CPU time: 18ms (faster than 88.4% of ${language.toUpperCase()} submissions)\n[MEMORY] Peak virtual memory: 14.8MB\nAll ${sampleTestCases.length} visible test cases passed.`
       );
     }, 600);
   };
@@ -167,7 +166,7 @@ export const ProblemWorkspace: React.FC = () => {
   if (loading && !problem) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-3.5rem)] bg-background">
-        <div className="flex items-center gap-2 font-mono text-sm text-text-muted">
+        <div className="flex items-center gap-2 font-mono text-sm text-text-secondary">
           <RefreshCw className="w-4 h-4 animate-spin text-primary" />
           <span>Loading problem specification from Supabase...</span>
         </div>
@@ -177,8 +176,8 @@ export const ProblemWorkspace: React.FC = () => {
 
   if (!problem) {
     return (
-      <div className="p-8 text-center bg-background">
-        <p className="text-text-muted font-mono">Problem not found.</p>
+      <div className="p-8 text-center bg-background min-h-screen">
+        <p className="text-text-secondary font-mono">Problem not found.</p>
         <Link to="/problems" className="text-primary font-mono text-sm underline mt-2 inline-block">
           Return to Problem Catalog
         </Link>
@@ -196,9 +195,9 @@ export const ProblemWorkspace: React.FC = () => {
     expectedOutput: tc.expected_output,
   }));
 
-  // Left Pane: Problem Description & Proofs
+  // Left Pane: Description, Editorial, Solutions, Submissions
   const LeftPane = (
-    <div className="flex flex-col h-full bg-surface">
+    <div className="flex flex-col h-full bg-surface text-text-primary">
       {/* Tab Navigation */}
       <div className="flex items-center justify-between px-3 h-10 border-b border-border bg-surface-elevated shrink-0">
         <div className="flex items-center gap-1">
@@ -206,54 +205,55 @@ export const ProblemWorkspace: React.FC = () => {
             onClick={() => setLeftTab('description')}
             className={`px-3 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
               leftTab === 'description'
-                ? 'bg-surface text-primary border border-border shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
+                ? 'bg-surface text-text-primary border border-border shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Problem</span>
+            <span>Description</span>
           </button>
 
           <button
-            onClick={() => setLeftTab('invariants')}
+            onClick={() => setLeftTab('editorial')}
             className={`px-3 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
-              leftTab === 'invariants'
-                ? 'bg-surface text-primary border border-border shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
+              leftTab === 'editorial'
+                ? 'bg-surface text-text-primary border border-border shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
-            <span>Invariants</span>
+            <span>Editorial</span>
+          </button>
+
+          <button
+            onClick={() => setLeftTab('solutions')}
+            className={`px-3 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
+              leftTab === 'solutions'
+                ? 'bg-surface text-text-primary border border-border shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5 text-[#FFC01E]" />
+            <span>Solutions</span>
           </button>
 
           <button
             onClick={() => setLeftTab('submissions')}
             className={`px-3 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
               leftTab === 'submissions'
-                ? 'bg-surface text-primary border border-border shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
+                ? 'bg-surface text-text-primary border border-border shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <History className="w-3.5 h-3.5" />
             <span>Submissions</span>
-          </button>
-
-          <button
-            onClick={() => setLeftTab('hints')}
-            className={`px-3 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
-              leftTab === 'hints'
-                ? 'bg-surface text-primary border border-border shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-warning" />
-            <span>Socratic Hints</span>
           </button>
         </div>
       </div>
 
       {/* Pane Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6 text-left select-text">
+        {/* TAB 1: DESCRIPTION */}
         {leftTab === 'description' && (
           <div className="space-y-6">
             <div>
@@ -262,9 +262,12 @@ export const ProblemWorkspace: React.FC = () => {
                 <Badge variant="neutral">Acceptance: {problem.acceptance_rate}%</Badge>
                 {isSolved && <Badge variant="success">Solved</Badge>}
                 {(problem.tags || []).map((tag) => (
-                  <Badge key={tag} variant="neutral">
+                  <span
+                    key={tag}
+                    className="bg-[#333333] text-gray-300 text-xs px-2 py-0.5 rounded font-mono"
+                  >
                     {tag}
-                  </Badge>
+                  </span>
                 ))}
               </div>
               <h1 className="text-xl font-bold font-mono text-text-primary">{problem.title}</h1>
@@ -276,20 +279,20 @@ export const ProblemWorkspace: React.FC = () => {
 
             {/* Sample Examples */}
             <div className="space-y-4">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted">
-                Sample Test Vectors
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
+                Verified Test Vectors & Examples
               </h3>
               {sampleTestCases.map((tc, idx) => (
-                <div key={tc.id || idx} className="p-3.5 rounded border border-border bg-surface-elevated space-y-2">
+                <div key={tc.id || idx} className="p-3.5 rounded-lg border border-border bg-surface-elevated space-y-2">
                   <div className="font-mono text-xs font-bold text-text-secondary">Example {idx + 1}:</div>
                   <div className="space-y-1 font-mono text-xs">
                     <div>
-                      <span className="text-text-muted">Input: </span>
+                      <span className="text-text-secondary">Input: </span>
                       <span className="text-text-primary font-semibold">{tc.input}</span>
                     </div>
                     <div>
-                      <span className="text-text-muted">Expected Output: </span>
-                      <span className="text-verdict-ac font-semibold">{tc.expected_output}</span>
+                      <span className="text-text-secondary">Expected Output: </span>
+                      <span className="text-[#00B8A3] font-semibold">{tc.expected_output}</span>
                     </div>
                   </div>
                 </div>
@@ -298,46 +301,71 @@ export const ProblemWorkspace: React.FC = () => {
 
             {/* Constraints */}
             <div className="space-y-2">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
                 Constraints & Mathematical Bounds
               </h3>
-              <div className="text-xs font-mono text-text-secondary bg-surface-elevated p-3 rounded border border-border whitespace-pre-line">
+              <div className="text-xs font-mono text-text-secondary bg-surface-elevated p-3 rounded-lg border border-border whitespace-pre-line">
                 {problem.constraints_markdown}
               </div>
             </div>
           </div>
         )}
 
-        {leftTab === 'invariants' && (
+        {/* TAB 2: EDITORIAL */}
+        {leftTab === 'editorial' && (
           <div className="space-y-4">
-            <div className="p-4 rounded border border-border bg-surface-elevated">
+            <div className="p-4 rounded-lg border border-border bg-surface-elevated">
               <h3 className="font-mono font-bold text-sm text-text-primary mb-2 flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-primary" />
-                <span>Formal Proof of Correctness & Invariants</span>
+                <span>Formal Editorial & Invariant Analysis</span>
               </h3>
               <p className="text-xs text-text-secondary leading-relaxed mb-4">
-                Rather than memorizing patterns, verify the deterministic state transitions that prove the algorithm terminates correctly.
+                Rigorous algorithmic analysis demonstrating the deterministic transition states that guarantee correct execution and complexity bounds.
               </p>
               <div className="space-y-3">
                 <div className="p-3 rounded bg-surface border border-border text-xs leading-relaxed font-sans text-text-primary">
-                  <strong>Loop Invariant:</strong> Maintain bounded invariant states during traversal. Each step reduces the search space monotonically.
+                  <strong className="font-mono text-primary">Invariant Formulation:</strong> During state transitions, the candidate space is contracted monotonically without skipping any possible valid configuration.
                 </div>
                 <div className="p-3 rounded bg-surface border border-border text-xs leading-relaxed font-sans text-text-primary">
-                  <strong>Asymptotic Verification:</strong> Ensure execution is strictly constrained to O(n) or O(log n) time and O(1) auxiliary space where required.
+                  <strong className="font-mono text-primary">Complexity Verification:</strong> Time complexity is proven to be strictly bounded by the constraints (typically $O(n)$ or $O(n \log n)$), preventing Time Limit Exceeded (TLE) under adversarial test vectors.
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* TAB 3: SOLUTIONS */}
+        {leftTab === 'solutions' && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg border border-border bg-surface-elevated space-y-3">
+              <h3 className="font-mono font-bold text-sm text-text-primary flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-[#FFC01E]" />
+                <span>Canonical Approaches & Proofs</span>
+              </h3>
+              <div className="space-y-3">
+                <div className="p-3 rounded bg-surface border border-border space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-xs text-text-primary">Approach 1: Optimal Hash Map / Two Pointers</span>
+                    <span className="font-mono text-[11px] text-[#00B8A3]">O(n) Time • O(n) Space</span>
+                  </div>
+                  <p className="text-xs text-text-secondary font-sans leading-relaxed">
+                    Trade auxiliary memory for linear time execution by storing past observations or contracting two sorted pointers.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: SUBMISSIONS */}
         {leftTab === 'submissions' && (
           <div className="space-y-3">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
               Past Submission History
             </h3>
-            <div className="border border-border rounded overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-surface-elevated border-b border-border text-text-muted">
+                <thead className="bg-surface-elevated border-b border-border text-text-secondary">
                   <tr>
                     <th className="p-2.5">Status</th>
                     <th className="p-2.5">Language</th>
@@ -349,15 +377,15 @@ export const ProblemWorkspace: React.FC = () => {
                 <tbody className="divide-y divide-border">
                   {isSolved ? (
                     <tr>
-                      <td className="p-2.5 text-verdict-ac font-bold">Accepted</td>
-                      <td className="p-2.5 font-mono">{language}</td>
+                      <td className="p-2.5 text-[#00B8A3] font-bold">Accepted</td>
+                      <td className="p-2.5 font-mono">{language.toUpperCase()}</td>
                       <td className="p-2.5">24 ms</td>
                       <td className="p-2.5">16.2 MB</td>
-                      <td className="p-2.5 text-text-muted">Recorded</td>
+                      <td className="p-2.5 text-text-secondary">Recorded</td>
                     </tr>
                   ) : (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-text-muted">
+                      <td colSpan={5} className="p-4 text-center text-text-secondary">
                         No submissions recorded yet for this session.
                       </td>
                     </tr>
@@ -367,39 +395,13 @@ export const ProblemWorkspace: React.FC = () => {
             </div>
           </div>
         )}
-
-        {leftTab === 'hints' && (
-          <div className="space-y-4">
-            <div className="p-3 rounded border border-warning/30 bg-warning/5 text-xs text-text-secondary">
-              <strong className="text-text-primary font-mono">Socratic Pedagogical Guardrail:</strong> Hints build conceptual scaffolding sequentially without revealing full code.
-            </div>
-            <details className="group border border-border rounded bg-surface-elevated p-3">
-              <summary className="font-mono text-xs font-bold text-text-primary cursor-pointer flex items-center justify-between">
-                <span>Hint 1: Invariant Identification</span>
-                <span className="text-[11px] text-primary group-open:hidden">Reveal</span>
-              </summary>
-              <p className="mt-2 text-xs text-text-secondary leading-relaxed font-sans">
-                Consider which elements you have visited so far, and what relationship must hold between past items and the current candidate.
-              </p>
-            </details>
-            <details className="group border border-border rounded bg-surface-elevated p-3">
-              <summary className="font-mono text-xs font-bold text-text-primary cursor-pointer flex items-center justify-between">
-                <span>Hint 2: Space vs Time Tradeoff</span>
-                <span className="text-[11px] text-primary group-open:hidden">Reveal</span>
-              </summary>
-              <p className="mt-2 text-xs text-text-secondary leading-relaxed font-sans">
-                Can an auxiliary map or two-pointer boundary contract the search space in constant time?
-              </p>
-            </details>
-          </div>
-        )}
       </div>
     </div>
   );
 
   // Right Pane: Code Editor & Console
   const RightPane = (
-    <div className="flex flex-col h-full bg-surface">
+    <div className="flex flex-col h-full bg-surface text-text-primary">
       {/* Editor Header */}
       <div className="flex items-center justify-between px-3 h-10 border-b border-border bg-surface-elevated shrink-0">
         <div className="flex items-center gap-2">
@@ -419,15 +421,15 @@ export const ProblemWorkspace: React.FC = () => {
         <div className="flex items-center gap-1.5">
           <button
             onClick={handleCopyCode}
-            className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-surface-subtle transition-colors"
+            className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-subtle transition-colors"
             title="Copy code"
           >
-            {isCopied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+            {isCopied ? <Check className="w-3.5 h-3.5 text-[#00B8A3]" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
 
           <button
             onClick={handleResetCode}
-            className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-surface-subtle transition-colors"
+            className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-subtle transition-colors"
             title="Reset to starter template"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -438,7 +440,7 @@ export const ProblemWorkspace: React.FC = () => {
       {/* Code Editor Body */}
       <div className="flex-1 flex overflow-hidden relative font-mono text-xs bg-background">
         {/* Line Numbers */}
-        <div className="w-12 py-3 bg-surface-elevated/40 border-r border-border text-right pr-3 select-none text-text-muted font-mono text-xs leading-5 shrink-0">
+        <div className="w-12 py-3 bg-surface-elevated/40 border-r border-border text-right pr-3 select-none text-text-secondary font-mono text-xs leading-5 shrink-0">
           {code.split('\n').map((_, i) => (
             <div key={i}>{i + 1}</div>
           ))}
@@ -477,7 +479,7 @@ export const ProblemWorkspace: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link
             to="/problems"
-            className="flex items-center gap-1 text-xs font-mono text-text-muted hover:text-text-primary transition-colors"
+            className="flex items-center gap-1 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Problem Index</span>
@@ -490,29 +492,26 @@ export const ProblemWorkspace: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Spaced-Repetition Revision Toggle */}
+          {/* Spaced-Repetition Revision Star */}
           <button
             onClick={() => toggleRevision(problem.id)}
-            className={`px-2.5 py-1 rounded text-xs font-mono font-medium flex items-center gap-1.5 transition-colors border ${
+            className={`p-1.5 rounded transition-colors ${
               isRevisionMarked
-                ? 'border-warning bg-warning/10 text-warning font-bold'
-                : 'border-border bg-surface text-text-muted hover:text-text-primary'
+                ? 'text-[#FFC01E] bg-[#FFC01E]/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
             }`}
-            title="Mark this problem for spaced-repetition revision (Ebbinghaus curve)"
+            title="Spaced repetition: review after 1, 3, 7, 21 days"
           >
-            {isRevisionMarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">
-              {isRevisionMarked ? 'Revision Due (Day 1)' : 'Mark for Revision'}
-            </span>
+            <Star className={`w-4 h-4 ${isRevisionMarked ? 'fill-[#FFC01E]' : ''}`} />
           </button>
 
           {/* Stopwatch */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-surface-elevated font-mono text-xs text-text-secondary">
-            <TimerIcon className="w-3.5 h-3.5 text-text-muted" />
-            <span>{formatTimer(timerSeconds)}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-elevated font-mono text-xs text-text-secondary">
+            <TimerIcon className="w-3.5 h-3.5 text-text-secondary" />
+            <span className="tabular-nums font-mono">{formatTimer(timerSeconds)}</span>
             <button
               onClick={() => setTimerRunning(!timerRunning)}
-              className="ml-1 text-text-muted hover:text-text-primary"
+              className="ml-1 text-text-secondary hover:text-text-primary"
             >
               {timerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             </button>

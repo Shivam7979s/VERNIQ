@@ -2,7 +2,7 @@ import type { Problem, Roadmap, TestCase } from '@/types';
 
 export const FALLBACK_PROBLEMS: Problem[] = [
   {
-    id: 'prob-00000001-0000-0000-0000-000000000001',
+    id: '00000000-0000-0000-0000-000000000301',
     title: 'Two Sum',
     slug: 'two-sum',
     difficulty: 'easy',
@@ -78,7 +78,7 @@ class Solution {
     revision_due: true,
   },
   {
-    id: 'prob-00000002-0000-0000-0000-000000000002',
+    id: '00000000-0000-0000-0000-000000000302',
     title: 'Best Time to Buy and Sell Stock',
     slug: 'best-time-to-buy-and-sell-stock',
     difficulty: 'easy',
@@ -140,7 +140,7 @@ public:
     revision_due: false,
   },
   {
-    id: 'prob-00000003-0000-0000-0000-000000000003',
+    id: '00000000-0000-0000-0000-000000000303',
     title: '3Sum',
     slug: '3sum',
     difficulty: 'medium',
@@ -246,7 +246,7 @@ class Solution {
     revision_due: false,
   },
   {
-    id: 'prob-00000004-0000-0000-0000-000000000004',
+    id: '00000000-0000-0000-0000-000000000304',
     title: 'Search in Rotated Sorted Array',
     slug: 'search-in-rotated-sorted-array',
     difficulty: 'medium',
@@ -342,7 +342,7 @@ public:
     revision_due: false,
   },
   {
-    id: 'prob-00000005-0000-0000-0000-000000000005',
+    id: '00000000-0000-0000-0000-000000000305',
     title: 'Container With Most Water',
     slug: 'container-with-most-water',
     difficulty: 'medium',
@@ -410,7 +410,7 @@ public:
     revision_due: false,
   },
   {
-    id: 'prob-00000006-0000-0000-0000-000000000006',
+    id: '00000000-0000-0000-0000-000000000306',
     title: 'Trapping Rain Water',
     slug: 'trapping-rain-water',
     difficulty: 'hard',
@@ -505,7 +505,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   'two-sum': [
     {
       id: 'tc-1',
-      problem_id: 'prob-00000001-0000-0000-0000-000000000001',
+      problem_id: '00000000-0000-0000-0000-000000000301',
       input: 'nums = [2,7,11,15], target = 9',
       expected_output: '[0,1]',
       is_sample: true,
@@ -513,7 +513,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-2',
-      problem_id: 'prob-00000001-0000-0000-0000-000000000001',
+      problem_id: '00000000-0000-0000-0000-000000000301',
       input: 'nums = [3,2,4], target = 6',
       expected_output: '[1,2]',
       is_sample: true,
@@ -521,7 +521,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-3',
-      problem_id: 'prob-00000001-0000-0000-0000-000000000001',
+      problem_id: '00000000-0000-0000-0000-000000000301',
       input: 'nums = [3,3], target = 6',
       expected_output: '[0,1]',
       is_sample: true,
@@ -531,7 +531,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   'best-time-to-buy-and-sell-stock': [
     {
       id: 'tc-4',
-      problem_id: 'prob-00000002-0000-0000-0000-000000000002',
+      problem_id: '00000000-0000-0000-0000-000000000302',
       input: 'prices = [7,1,5,3,6,4]',
       expected_output: '5',
       is_sample: true,
@@ -539,7 +539,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-5',
-      problem_id: 'prob-00000002-0000-0000-0000-000000000002',
+      problem_id: '00000000-0000-0000-0000-000000000302',
       input: 'prices = [7,6,4,3,1]',
       expected_output: '0',
       is_sample: true,
@@ -549,7 +549,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   '3sum': [
     {
       id: 'tc-6',
-      problem_id: 'prob-00000003-0000-0000-0000-000000000003',
+      problem_id: '00000000-0000-0000-0000-000000000303',
       input: 'nums = [-1,0,1,2,-1,-4]',
       expected_output: '[[-1,-1,2],[-1,0,1]]',
       is_sample: true,
@@ -557,7 +557,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-7',
-      problem_id: 'prob-00000003-0000-0000-0000-000000000003',
+      problem_id: '00000000-0000-0000-0000-000000000303',
       input: 'nums = [0,1,1]',
       expected_output: '[]',
       is_sample: true,
@@ -565,7 +565,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-8',
-      problem_id: 'prob-00000003-0000-0000-0000-000000000003',
+      problem_id: '00000000-0000-0000-0000-000000000303',
       input: 'nums = [0,0,0]',
       expected_output: '[[0,0,0]]',
       is_sample: true,
@@ -575,7 +575,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   'search-in-rotated-sorted-array': [
     {
       id: 'tc-9',
-      problem_id: 'prob-00000004-0000-0000-0000-000000000004',
+      problem_id: '00000000-0000-0000-0000-000000000304',
       input: 'nums = [4,5,6,7,0,1,2], target = 0',
       expected_output: '4',
       is_sample: true,
@@ -583,7 +583,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-10',
-      problem_id: 'prob-00000004-0000-0000-0000-000000000004',
+      problem_id: '00000000-0000-0000-0000-000000000304',
       input: 'nums = [4,5,6,7,0,1,2], target = 3',
       expected_output: '-1',
       is_sample: true,
@@ -591,7 +591,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-11',
-      problem_id: 'prob-00000004-0000-0000-0000-000000000004',
+      problem_id: '00000000-0000-0000-0000-000000000304',
       input: 'nums = [1], target = 0',
       expected_output: '-1',
       is_sample: true,
@@ -601,7 +601,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   'container-with-most-water': [
     {
       id: 'tc-12',
-      problem_id: 'prob-00000005-0000-0000-0000-000000000005',
+      problem_id: '00000000-0000-0000-0000-000000000305',
       input: 'height = [1,8,6,2,5,4,8,3,7]',
       expected_output: '49',
       is_sample: true,
@@ -609,7 +609,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-13',
-      problem_id: 'prob-00000005-0000-0000-0000-000000000005',
+      problem_id: '00000000-0000-0000-0000-000000000305',
       input: 'height = [1,1]',
       expected_output: '1',
       is_sample: true,
@@ -619,7 +619,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
   'trapping-rain-water': [
     {
       id: 'tc-14',
-      problem_id: 'prob-00000006-0000-0000-0000-000000000006',
+      problem_id: '00000000-0000-0000-0000-000000000306',
       input: 'height = [0,1,0,2,1,0,1,3,2,1,2,1]',
       expected_output: '6',
       is_sample: true,
@@ -627,7 +627,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
     },
     {
       id: 'tc-15',
-      problem_id: 'prob-00000006-0000-0000-0000-000000000006',
+      problem_id: '00000000-0000-0000-0000-000000000306',
       input: 'height = [4,2,0,3,2,5]',
       expected_output: '9',
       is_sample: true,
@@ -637,7 +637,7 @@ export const FALLBACK_SAMPLE_TEST_CASES: Record<string, TestCase[]> = {
 };
 
 export const FALLBACK_ROADMAP: Roadmap = {
-  id: 'road-00000001-0000-0000-0000-000000000001',
+  id: '00000000-0000-0000-0000-000000000201',
   title: 'DSA & Problem Solving',
   slug: 'dsa-problem-solving',
   description: 'Canonical structured A-to-Z data structures and algorithms track with formal invariant proofs and complexity bounds.',
@@ -646,14 +646,14 @@ export const FALLBACK_ROADMAP: Roadmap = {
   is_published: true,
   steps: [
     {
-      id: 'step-00000001-0000-0000-0000-000000000001',
-      roadmap_id: 'road-00000001-0000-0000-0000-000000000001',
+      id: '00000000-0000-0000-0000-000000000211',
+      roadmap_id: '00000000-0000-0000-0000-000000000201',
       title: 'Step 1: Learn the Basics',
       order_index: 1,
       topics: [
         {
-          id: 'top-00000001-0000-0000-0000-000000000001',
-          step_id: 'step-00000001-0000-0000-0000-000000000001',
+          id: '00000000-0000-0000-0000-000000000221',
+          step_id: '00000000-0000-0000-0000-000000000211',
           title: 'Linear Search & Hash Lookup Invariants',
           order_index: 1,
           problems: [
@@ -664,14 +664,14 @@ export const FALLBACK_ROADMAP: Roadmap = {
       ],
     },
     {
-      id: 'step-00000002-0000-0000-0000-000000000002',
-      roadmap_id: 'road-00000001-0000-0000-0000-000000000001',
+      id: '00000000-0000-0000-0000-000000000212',
+      roadmap_id: '00000000-0000-0000-0000-000000000201',
       title: 'Step 2: Arrays & Two Pointers',
       order_index: 2,
       topics: [
         {
-          id: 'top-00000002-0000-0000-0000-000000000002',
-          step_id: 'step-00000002-0000-0000-0000-000000000002',
+          id: '00000000-0000-0000-0000-000000000222',
+          step_id: '00000000-0000-0000-0000-000000000212',
           title: 'Two Pointers Technique & Window Bounds',
           order_index: 1,
           problems: [
@@ -683,14 +683,14 @@ export const FALLBACK_ROADMAP: Roadmap = {
       ],
     },
     {
-      id: 'step-00000003-0000-0000-0000-000000000003',
-      roadmap_id: 'road-00000001-0000-0000-0000-000000000001',
+      id: '00000000-0000-0000-0000-000000000213',
+      roadmap_id: '00000000-0000-0000-0000-000000000201',
       title: 'Step 3: Binary Search',
       order_index: 3,
       topics: [
         {
-          id: 'top-00000003-0000-0000-0000-000000000003',
-          step_id: 'step-00000003-0000-0000-0000-000000000003',
+          id: '00000000-0000-0000-0000-000000000223',
+          step_id: '00000000-0000-0000-0000-000000000213',
           title: 'Binary Search on 1D Arrays & Rotated Spaces',
           order_index: 1,
           problems: [

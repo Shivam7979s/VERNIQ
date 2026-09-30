@@ -13,8 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Circle,
-  Bookmark,
-  BookmarkCheck,
+  Star,
   ArrowUpDown,
   BookOpen,
   Code2,
@@ -101,48 +100,48 @@ export const ProblemsView: React.FC = () => {
   const revisionCount = problems.filter((p) => Boolean(revisionMap[p.id])).length;
 
   return (
-    <div className="py-8 space-y-8 text-left">
+    <div className="py-8 space-y-8 text-left bg-background min-h-screen text-text-primary">
       <Container size="xl">
         {/* Banner */}
-        <div className="p-8 rounded border border-border bg-surface shadow-elevation-1 mb-8">
+        <div className="p-8 rounded-lg border border-border bg-surface shadow-elevation-1 mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
-                <Badge variant="primary">Supabase Problem Engine</Badge>
-                <Badge variant="neutral">Phase 2 Dynamic Catalog</Badge>
+                <Badge variant="primary">Problem Catalog</Badge>
+                <Badge variant="neutral">LeetCode Standard</Badge>
               </div>
               <h1 className="text-3xl font-bold font-mono tracking-tight text-text-primary">
                 Engineering Problems & Challenges
               </h1>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Live problem repository loaded dynamically from Supabase PostgreSQL tables. Multi-language starter boilerplates, test-case verification, and real-time spaced repetition tracking.
+                Dense LeetCode-standard indexed problem repository with mathematical invariant proofs, multi-language sandbox, and spaced-repetition revision cycles.
               </p>
             </div>
 
             {/* Quick Metrics Bar */}
-            <div className="flex items-center gap-4 bg-surface-elevated p-4 rounded border border-border">
-              <div className="text-center px-3 border-r border-border">
+            <div className="flex items-center gap-4 bg-surface-elevated p-4 rounded-lg border border-border">
+              <div className="text-center px-4 border-r border-border">
                 <div className="text-xl font-bold font-mono text-text-primary">{problems.length}</div>
-                <div className="text-[11px] text-text-muted uppercase tracking-wider">Total</div>
+                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Total</div>
               </div>
-              <div className="text-center px-3 border-r border-border">
-                <div className="text-xl font-bold font-mono text-verdict-ac">{solvedCount}</div>
-                <div className="text-[11px] text-text-muted uppercase tracking-wider">Solved</div>
+              <div className="text-center px-4 border-r border-border">
+                <div className="text-xl font-bold font-mono text-[#00B8A3]">{solvedCount}</div>
+                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Solved</div>
               </div>
-              <div className="text-center px-3">
-                <div className="text-xl font-bold font-mono text-warning">{revisionCount}</div>
-                <div className="text-[11px] text-text-muted uppercase tracking-wider">Revision Due</div>
+              <div className="text-center px-4">
+                <div className="text-xl font-bold font-mono text-[#FFC01E]">{revisionCount}</div>
+                <div className="text-[11px] text-text-secondary uppercase tracking-wider font-mono">Revision Due</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Dense Filters Bar */}
-        <div className="p-4 rounded border border-border bg-surface flex flex-col md:flex-row items-center gap-3 justify-between">
+        <div className="p-4 rounded-lg border border-border bg-surface flex flex-col md:flex-row items-center gap-3 justify-between">
           <div className="w-full md:w-80">
             <Input
               placeholder="Search problems by name or tag..."
-              leftIcon={<Search className="w-4 h-4 text-text-muted" />}
+              leftIcon={<Search className="w-4 h-4 text-text-secondary" />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -194,7 +193,7 @@ export const ProblemsView: React.FC = () => {
               size="sm"
               variant={revisionOnly ? 'primary' : 'secondary'}
               onClick={() => setRevisionOnly(!revisionOnly)}
-              leftIcon={<Bookmark className="w-3.5 h-3.5" />}
+              leftIcon={<Star className="w-3.5 h-3.5 text-[#FFC01E]" />}
               className="text-xs font-mono"
             >
               Revision Queue ({revisionCount})
@@ -208,19 +207,19 @@ export const ProblemsView: React.FC = () => {
               title="Refresh from Supabase"
               className="h-8 px-2"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : 'text-text-muted'}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : 'text-text-secondary'}`} />
             </Button>
           </div>
         </div>
 
-        {/* Dense Table View */}
-        <div className="border border-border rounded bg-surface overflow-hidden shadow-elevation-1">
+        {/* Dense Table View - LeetCode Style */}
+        <div className="border border-border rounded-lg bg-surface overflow-hidden shadow-elevation-1">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs font-mono">
               <thead>
-                <tr className="bg-surface-elevated border-b border-border text-text-muted">
-                  <th className="py-3 px-4 w-12 text-center">Status</th>
-                  <th className="py-3 px-4">
+                <tr className="bg-surface-elevated border-b border-border text-text-secondary h-11">
+                  <th className="py-2.5 px-4 w-12 text-center">Status</th>
+                  <th className="py-2.5 px-4">
                     <button
                       onClick={() => {
                         if (sortField === 'title') setSortAsc(!sortAsc);
@@ -235,7 +234,7 @@ export const ProblemsView: React.FC = () => {
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
-                  <th className="py-3 px-4 w-36">
+                  <th className="py-2.5 px-4 w-36">
                     <button
                       onClick={() => {
                         if (sortField === 'acceptance') setSortAsc(!sortAsc);
@@ -250,7 +249,7 @@ export const ProblemsView: React.FC = () => {
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
-                  <th className="py-3 px-4 w-28">
+                  <th className="py-2.5 px-4 w-28">
                     <button
                       onClick={() => {
                         if (sortField === 'difficulty') setSortAsc(!sortAsc);
@@ -265,9 +264,9 @@ export const ProblemsView: React.FC = () => {
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
-                  <th className="py-3 px-4 hidden md:table-cell">Topic Tags</th>
-                  <th className="py-3 px-4 w-36 text-center">Revision</th>
-                  <th className="py-3 px-4 w-24 text-right">Action</th>
+                  <th className="py-2.5 px-4 hidden md:table-cell">Topic Tags</th>
+                  <th className="py-2.5 px-4 w-24 text-center">Revision</th>
+                  <th className="py-2.5 px-4 w-24 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -279,48 +278,48 @@ export const ProblemsView: React.FC = () => {
                     return (
                       <tr
                         key={prob.id}
-                        className="hover:bg-surface-elevated/60 transition-colors group"
+                        className="h-12 hover:bg-surface-elevated/70 transition-colors group"
                       >
-                        {/* Status Icon */}
-                        <td className="py-3 px-4 text-center">
+                        {/* Status Checkmark */}
+                        <td className="py-2 px-4 text-center">
                           {status === 'solved' && (
                             <span title="Solved">
-                              <CheckCircle2 className="w-4 h-4 text-verdict-ac inline" />
+                              <CheckCircle2 className="w-4 h-4 text-[#00B8A3] inline" />
                             </span>
                           )}
                           {status === 'attempted' && (
                             <span title="Attempted">
-                              <Clock className="w-4 h-4 text-warning inline" />
+                              <Clock className="w-4 h-4 text-[#FFC01E] inline" />
                             </span>
                           )}
                           {status === 'todo' && (
                             <span title="Todo">
-                              <Circle className="w-4 h-4 text-text-muted inline" />
+                              <Circle className="w-4 h-4 text-text-secondary/40 inline" />
                             </span>
                           )}
                         </td>
 
-                        {/* Title & Editorial Link */}
-                        <td className="py-3 px-4">
+                        {/* Title (hover:text-blue-400) */}
+                        <td className="py-2 px-4">
                           <div className="flex items-center gap-2">
                             <Link
                               to={`/problems/${prob.slug}`}
-                              className="font-sans font-medium text-text-primary group-hover:text-primary transition-colors text-sm hover:underline"
+                              className="font-sans font-medium text-text-primary hover:text-blue-400 transition-colors text-sm hover:underline truncate max-w-md"
                             >
                               {prob.title}
                             </Link>
                             <Link
                               to={`/problems/${prob.slug}`}
                               title="View formal invariant proof & editorial"
-                              className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-primary transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-blue-400 transition-opacity"
                             >
                               <BookOpen className="w-3.5 h-3.5" />
                             </Link>
                           </div>
                         </td>
 
-                        {/* Acceptance Rate with Mini Progress Bar */}
-                        <td className="py-3 px-4">
+                        {/* Acceptance Rate (JetBrains Mono tabular-nums) */}
+                        <td className="py-2 px-4">
                           <div className="flex items-center gap-2">
                             <div className="w-12 bg-surface-subtle h-1.5 rounded-full overflow-hidden">
                               <div
@@ -328,22 +327,22 @@ export const ProblemsView: React.FC = () => {
                                 style={{ width: `${Math.min(100, Math.max(0, prob.acceptance_rate))}%` }}
                               />
                             </div>
-                            <span className="text-text-secondary">{prob.acceptance_rate}%</span>
+                            <span className="font-mono tabular-nums text-text-secondary">{prob.acceptance_rate}%</span>
                           </div>
                         </td>
 
-                        {/* Difficulty */}
-                        <td className="py-3 px-4">
+                        {/* Difficulty Pill */}
+                        <td className="py-2 px-4">
                           <DifficultyBadge difficulty={prob.difficulty} />
                         </td>
 
-                        {/* Tags */}
-                        <td className="py-3 px-4 hidden md:table-cell">
-                          <div className="flex flex-wrap gap-1">
+                        {/* Topic Tags (bg-[#333333] text-gray-300 text-xs px-2 py-0.5 rounded) */}
+                        <td className="py-2 px-4 hidden md:table-cell">
+                          <div className="flex flex-wrap gap-1.5">
                             {(prob.tags || []).map((tag) => (
                               <span
                                 key={tag}
-                                className="px-1.5 py-0.5 rounded border border-border bg-surface-elevated text-[11px] text-text-secondary"
+                                className="bg-[#333333] text-gray-300 text-xs px-2 py-0.5 rounded font-mono"
                               >
                                 {tag}
                               </span>
@@ -351,37 +350,29 @@ export const ProblemsView: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Revision Badge Button */}
-                        <td className="py-3 px-4 text-center">
+                        {/* Revision Star Action */}
+                        <td className="py-2 px-4 text-center">
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               toggleRevision(prob.id);
                             }}
-                            className={`px-2 py-1 rounded text-[11px] font-mono flex items-center justify-center gap-1 mx-auto transition-colors border ${
-                              isMarked
-                                ? 'border-warning/40 bg-warning/10 text-warning font-semibold'
-                                : 'border-transparent text-text-muted hover:border-border hover:bg-surface-elevated'
-                            }`}
-                            title="Spaced repetition: review after 1, 3, 7, 21 days"
+                            className="p-1 rounded hover:bg-surface-elevated transition-colors"
+                            title={isMarked ? 'In Revision Queue (Click to remove)' : 'Mark for Spaced Repetition Revision'}
                           >
-                            {isMarked ? (
-                              <>
-                                <BookmarkCheck className="w-3 h-3" />
-                                <span>Revision Due</span>
-                              </>
-                            ) : (
-                              <>
-                                <Bookmark className="w-3 h-3" />
-                                <span>Review</span>
-                              </>
-                            )}
+                            <Star
+                              className={`w-4 h-4 transition-colors ${
+                                isMarked
+                                  ? 'fill-[#FFC01E] text-[#FFC01E]'
+                                  : 'text-text-secondary hover:text-[#FFC01E]'
+                              }`}
+                            />
                           </button>
                         </td>
 
-                        {/* Action Link */}
-                        <td className="py-3 px-4 text-right">
+                        {/* Action Solve Link */}
+                        <td className="py-2 px-4 text-right">
                           <Link to={`/problems/${prob.slug}`}>
                             <Button
                               size="sm"
@@ -398,7 +389,7 @@ export const ProblemsView: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-text-muted">
+                    <td colSpan={7} className="p-8 text-center text-text-secondary font-mono">
                       {loading ? 'Loading problems from Supabase...' : 'No problems match your current search and filter parameters.'}
                     </td>
                   </tr>

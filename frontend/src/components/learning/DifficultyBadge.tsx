@@ -10,9 +10,9 @@ export interface DifficultyBadgeProps {
 
 export const DifficultyBadge: React.FC<DifficultyBadgeProps> = ({ difficulty, className }) => {
   const styles: Record<DifficultyLevel, string> = {
-    easy: 'text-difficulty-easy bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400 dark:border-emerald-500/40',
-    medium: 'text-difficulty-medium bg-amber-500/10 border-amber-500/30 dark:text-amber-400 dark:border-amber-500/40',
-    hard: 'text-difficulty-hard bg-red-500/10 border-red-500/30 dark:text-red-400 dark:border-red-500/40',
+    easy: 'text-[#00B8A3] bg-[#00B8A3]/10 border-[#00B8A3]/30',
+    medium: 'text-[#FFC01E] bg-[#FFC01E]/10 border-[#FFC01E]/30',
+    hard: 'text-[#FF375F] bg-[#FF375F]/10 border-[#FF375F]/30',
   };
 
   const labels: Record<DifficultyLevel, string> = {
@@ -24,7 +24,7 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = ({ difficulty, cl
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-sm border text-[11px] font-mono font-semibold uppercase tracking-wider select-none',
+        'inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-mono font-medium select-none',
         styles[difficulty],
         className
       )}

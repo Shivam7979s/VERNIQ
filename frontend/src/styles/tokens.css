@@ -26,24 +26,24 @@
   --color-primary: #2563EB;
   --color-primary-hover: #1D4ED8;
   --color-primary-subtle: #EFF6FF;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
+  --color-success: #00B8A3;
+  --color-warning: #FFC01E;
+  --color-error: #FF375F;
 
   /* Difficulty - Light Mode */
-  --difficulty-easy: #059669;
-  --difficulty-medium: #D97706;
-  --difficulty-hard: #DC2626;
+  --difficulty-easy: #00B8A3;
+  --difficulty-medium: #FFC01E;
+  --difficulty-hard: #FF375F;
 
   /* Progress - Light Mode */
-  --progress-complete: #10B981;
+  --progress-complete: #00B8A3;
   --progress-active: #2563EB;
   --progress-pending: #94A3B8;
 
   /* Execution Verdicts - Light Mode */
-  --verdict-ac: #059669;
-  --verdict-wa: #DC2626;
-  --verdict-tle: #D97706;
+  --verdict-ac: #00B8A3;
+  --verdict-wa: #FF375F;
+  --verdict-tle: #FFC01E;
   --verdict-mle: #7C3AED;
   --verdict-ce: #EA580C;
 
@@ -67,46 +67,46 @@
 }
 
 .dark {
-  /* Surfaces & Backgrounds - Dark Mode */
-  --color-background: #0B0F17;
-  --color-surface: #111827;
-  --color-surface-elevated: #1E293B;
-  --color-surface-subtle: #172033;
-  --color-surface-sunken: #080C14;
+  /* Surfaces & Backgrounds - Authentic LeetCode Dark Mode */
+  --color-background: #1A1A1A;
+  --color-surface: #262626;
+  --color-surface-elevated: #2D2D2D;
+  --color-surface-subtle: #333333;
+  --color-surface-sunken: #141414;
 
   /* Typography / Text - Dark Mode */
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #94A3B8;
+  --color-text-primary: #EFF0F6;
+  --color-text-secondary: #8C8C8C;
   --color-text-muted: #64748B;
-  --color-text-inverse: #0F172A;
+  --color-text-inverse: #1A1A1A;
 
-  /* Borders - Dark Mode (Crisp 1px structural lines) */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-border-focus: #60A5FA;
+  /* Borders - Dark Mode (1px solid #3E3E3E) */
+  --color-border: #3E3E3E;
+  --color-border-strong: #525252;
+  --color-border-focus: #3B82F6;
 
   /* Brand / Semantic - Dark Mode */
   --color-primary: #3B82F6;
   --color-primary-hover: #2563EB;
   --color-primary-subtle: #1E2A4A;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
+  --color-success: #00B8A3;
+  --color-warning: #FFC01E;
+  --color-error: #FF375F;
 
   /* Difficulty - Dark Mode */
-  --difficulty-easy: #34D399;
-  --difficulty-medium: #FBBF24;
-  --difficulty-hard: #F87171;
+  --difficulty-easy: #00B8A3;
+  --difficulty-medium: #FFC01E;
+  --difficulty-hard: #FF375F;
 
   /* Progress - Dark Mode */
-  --progress-complete: #10B981;
+  --progress-complete: #00B8A3;
   --progress-active: #3B82F6;
-  --progress-pending: #64748B;
+  --progress-pending: #525252;
 
   /* Execution Verdicts - Dark Mode */
-  --verdict-ac: #10B981;
-  --verdict-wa: #EF4444;
-  --verdict-tle: #F59E0B;
+  --verdict-ac: #00B8A3;
+  --verdict-wa: #FF375F;
+  --verdict-tle: #FFC01E;
   --verdict-mle: #8B5CF6;
   --verdict-ce: #F97316;
 
