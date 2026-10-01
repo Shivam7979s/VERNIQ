@@ -16,6 +16,8 @@ import { LoginView } from '@/routes/LoginView';
 import { RegisterView } from '@/routes/RegisterView';
 import { ForgotPasswordView } from '@/routes/ForgotPasswordView';
 import { DashboardView } from '@/routes/DashboardView';
+import { StudyPlanView } from '@/routes/StudyPlanView';
+import { RevisionView } from '@/routes/RevisionView';
 import { WorkspaceSubView } from '@/routes/WorkspaceSubView';
 import { NotFoundView } from '@/routes/NotFoundView';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -147,7 +149,31 @@ export const App: React.FC = () => {
             path="/plan"
             element={
               <ProtectedRoute>
-                <Navigate to="/app/plan" replace />
+                <Navigate to="/app/study-plan" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/study-plan"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/study-plan" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/revision"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/revision" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/settings" replace />
               </ProtectedRoute>
             }
           />
@@ -203,14 +229,7 @@ export const App: React.FC = () => {
             path="/app/revision"
             element={
               <ProtectedRoute>
-                <WorkspaceSubView
-                  title="Spaced Repetition"
-                  moduleName="Spaced Repetition"
-                  phaseTarget="Phase 3"
-                  description="Ebbinghaus forgetting curve scheduling for algorithmic patterns."
-                  emptyTitle="Revision Queue Empty"
-                  emptyDescription="Solve questions in practice mode to schedule 1-3-7-21 day automated reviews."
-                />
+                <RevisionView />
               </ProtectedRoute>
             }
           />
@@ -218,14 +237,15 @@ export const App: React.FC = () => {
             path="/app/plan"
             element={
               <ProtectedRoute>
-                <WorkspaceSubView
-                  title="Study Plan"
-                  moduleName="Scheduler"
-                  phaseTarget="Phase 1"
-                  description="Automated time budgeting and technical interview deadlines."
-                  emptyTitle="No Active Plan"
-                  emptyDescription="Configure target company and interview timeline during Phase 1 onboarding."
-                />
+                <StudyPlanView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/study-plan"
+            element={
+              <ProtectedRoute>
+                <StudyPlanView />
               </ProtectedRoute>
             }
           />

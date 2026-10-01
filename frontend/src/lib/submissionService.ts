@@ -196,6 +196,29 @@ export async function runCode(
     true
   );
 
+  // Sync execution results to Supabase
+  if (isSupabaseConfigured()) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('submissions')
+          .update({
+            verdict: completedSub.verdict,
+            runtime_ms: completedSub.runtime_ms || 0,
+            memory_kb: completedSub.memory_kb || 0,
+            stdout_output: completedSub.stdout_output || null,
+            stderr_output: completedSub.stderr_output || null,
+            compile_output: completedSub.compile_output || null,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', submissionId);
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
   return { submissionId, submission: completedSub };
 }
 
@@ -280,6 +303,43 @@ export async function submitSolution(
     false,
     testCases.length > 0 ? testCases : undefined
   );
+
+  // Sync terminal execution results back to Supabase
+  if (isSupabaseConfigured()) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('submissions')
+          .update({
+            verdict: completedSub.verdict,
+            runtime_ms: completedSub.runtime_ms || 0,
+            memory_kb: completedSub.memory_kb || 0,
+            stdout_output: completedSub.stdout_output || null,
+            stderr_output: completedSub.stderr_output || null,
+            compile_output: completedSub.compile_output || null,
+            test_cases_passed: completedSub.test_cases_passed || 0,
+            total_test_cases: completedSub.total_test_cases || 1,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', submissionId);
+
+        if (completedSub.verdict === 'accepted') {
+          await supabase.from('user_problem_progress').upsert(
+            {
+              user_id: user.id,
+              problem_id: problemId,
+              status: 'solved',
+              solved_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,problem_id' }
+          );
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to sync completed submission to Supabase:', err);
+    }
+  }
 
   return { submissionId, submission: completedSub };
 }

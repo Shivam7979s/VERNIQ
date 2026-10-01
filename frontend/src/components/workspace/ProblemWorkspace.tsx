@@ -7,6 +7,7 @@ import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { Badge } from '@/components/ui/data/Badge';
 import { useProblemBySlug } from '@/hooks/useProblemBySlug';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useAuth } from '@/hooks/useAuth';
 import {
   ChevronLeft,
   RotateCcw,
@@ -42,8 +43,16 @@ export const ProblemWorkspace: React.FC = () => {
 
   const { problem, testCases: sampleTestCases, loading } = useProblemBySlug(activeSlug);
   const { progressMap, revisionMap, updateProgress, toggleRevision } = useUserProgress();
+  const { preferredLanguage, updatePreferredLanguage } = useAuth();
 
-  const [language, setLanguage] = useState<string>('cpp');
+  const [language, setLanguage] = useState<string>(preferredLanguage || 'java');
+
+  useEffect(() => {
+    if (preferredLanguage) {
+      setLanguage(preferredLanguage);
+    }
+  }, [preferredLanguage]);
+
   const [code, setCode] = useState<string>('');
   const [leftTab, setLeftTab] = useState<'description' | 'editorial' | 'solutions' | 'submissions'>('description');
   const [customInput, setCustomInput] = useState<string>('');
@@ -131,6 +140,7 @@ export const ProblemWorkspace: React.FC = () => {
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
+    updatePreferredLanguage(lang);
     if (problem?.starter_templates?.[lang]) {
       setCode(problem.starter_templates[lang]);
     } else {

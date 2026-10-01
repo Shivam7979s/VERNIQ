@@ -72,6 +72,8 @@ export interface UserProfile {
   leetcode_username?: string | null;
   college_id?: string | null;
   college_name?: string | null;
+  preferred_language?: string | null;
+  tab_size?: number;
   score: number;
   problems_solved_count: number;
   current_streak: number;
@@ -216,4 +218,60 @@ export interface UserRevisionItem {
   next_review_at: string;
   is_reviewed: boolean;
 }
+
+export type PlannerGoal =
+  | 'product_sde'
+  | 'faang_top_tier'
+  | 'core_cs_foundations'
+  | 'campus_placement';
+
+export type PlanTaskStatus = 'pending' | 'completed' | 'skipped';
+
+export interface UserStudyPlan {
+  id: string;
+  user_id: string;
+  title: string;
+  goal: PlannerGoal;
+  target_date: string;
+  daily_minutes: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserStudyPlanTask {
+  id: string;
+  plan_id: string;
+  user_id: string;
+  problem_id: string;
+  scheduled_date: string; // YYYY-MM-DD
+  status: PlanTaskStatus;
+  completed_at?: string | null;
+  order_index: number;
+  problems?: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: DifficultyLevel;
+    tags?: string[];
+  };
+}
+
+export interface RevisionCard {
+  id: string;
+  user_id: string;
+  problem_id: string;
+  interval_days: number;
+  next_review_at: string;
+  is_reviewed: boolean;
+  problem?: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: DifficultyLevel;
+    description_markdown?: string;
+    constraints_markdown?: string;
+    tags?: string[];
+  };
+}
+
 

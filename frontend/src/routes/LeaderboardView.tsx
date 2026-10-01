@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Container } from '@/components/ui/layout/Container';
 import { PageHeader } from '@/components/ui/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/data/Badge';
 import { Input } from '@/components/ui/forms/Input';
 import { Button } from '@/components/ui/actions/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SEEDED_COLLEGES } from '@/lib/colleges';
 import type { LeaderboardEntry, CampusLeagueEntry } from '@/types';
 import {
@@ -19,176 +20,78 @@ import {
   Flame,
   CheckCircle2,
   GraduationCap,
-  Sparkles,
+  Users,
 } from 'lucide-react';
 
 export const LeaderboardView: React.FC = () => {
   const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState('global');
   const [search, setSearch] = useState('');
+  const [engineers, setEngineers] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const currentCollegeName = profile?.college_name || 'Indian Institute of Technology Bombay';
+  const currentCollegeName = profile?.college_name || 'Independent / Not Affiliated';
 
-  // Seeded Global Engineers Data
-  const globalEngineers: LeaderboardEntry[] = useMemo(() => [
-    {
-      rank: 1,
-      id: 'eng-1',
-      username: 'aditya_verma',
-      full_name: 'Aditya Verma',
-      avatar_url: null,
-      college_name: 'Indian Institute of Technology Bombay',
-      college_id: 'col-iitb',
-      problems_solved_count: 182,
-      score: 3640,
-      current_streak: 42,
-    },
-    {
-      rank: 2,
-      id: 'eng-2',
-      username: 'sneha_mukherjee',
-      full_name: 'Sneha Mukherjee',
-      avatar_url: null,
-      college_name: 'International Institute of Information Technology, Hyderabad',
-      college_id: 'col-iiith',
-      problems_solved_count: 165,
-      score: 3300,
-      current_streak: 28,
-    },
-    {
-      rank: 3,
-      id: 'eng-3',
-      username: 'rohan_gupta',
-      full_name: 'Rohan Gupta',
-      avatar_url: null,
-      college_name: 'Indian Institute of Technology Delhi',
-      college_id: 'col-iitd',
-      problems_solved_count: 154,
-      score: 3080,
-      current_streak: 35,
-    },
-    {
-      rank: 4,
-      id: 'eng-4',
-      username: 'priya_nair',
-      full_name: 'Priya Nair',
-      avatar_url: null,
-      college_name: 'Birla Institute of Technology and Science, Pilani',
-      college_id: 'col-bits',
-      problems_solved_count: 142,
-      score: 2840,
-      current_streak: 19,
-    },
-    {
-      rank: 5,
-      id: 'eng-5',
-      username: 'arjun_patel',
-      full_name: 'Arjun Patel',
-      avatar_url: null,
-      college_name: 'Indian Institute of Technology Madras',
-      college_id: 'col-iitm',
-      problems_solved_count: 138,
-      score: 2760,
-      current_streak: 24,
-    },
-    {
-      rank: 6,
-      id: 'eng-6',
-      username: 'kavya_s',
-      full_name: 'Kavya Srinivasan',
-      avatar_url: null,
-      college_name: 'National Institute of Technology Tiruchirappalli',
-      college_id: 'col-nitt',
-      problems_solved_count: 126,
-      score: 2520,
-      current_streak: 15,
-    },
-    {
-      rank: 7,
-      id: 'eng-7',
-      username: 'vikram_singh',
-      full_name: 'Vikram Singh',
-      avatar_url: null,
-      college_name: 'Delhi Technological University',
-      college_id: 'col-dtu',
-      problems_solved_count: 118,
-      score: 2360,
-      current_streak: 21,
-    },
-    {
-      rank: 8,
-      id: 'eng-8',
-      username: 'ananya_das',
-      full_name: 'Ananya Das',
-      avatar_url: null,
-      college_name: 'Indian Institute of Technology Kharagpur',
-      college_id: 'col-iitkgp',
-      problems_solved_count: 110,
-      score: 2200,
-      current_streak: 14,
-    },
-    {
-      rank: 9,
-      id: 'eng-9',
-      username: 'manish_kumar',
-      full_name: 'Manish Kumar',
-      avatar_url: null,
-      college_name: 'National Institute of Technology Karnataka, Surathkal',
-      college_id: 'col-nitk',
-      problems_solved_count: 98,
-      score: 1960,
-      current_streak: 12,
-    },
-    {
-      rank: 10,
-      id: 'eng-10',
-      username: 'tanya_sharma',
-      full_name: 'Tanya Sharma',
-      avatar_url: null,
-      college_name: 'Vellore Institute of Technology, Vellore',
-      college_id: 'col-vit',
-      problems_solved_count: 92,
-      score: 1840,
-      current_streak: 9,
-    },
-    // Include current user in standings
-    {
-      rank: 14,
-      id: user?.id || 'current-user',
-      username: profile?.username || 'you_engineer',
-      full_name: profile?.full_name || 'You (Current Engineer)',
-      avatar_url: profile?.avatar_url || null,
-      college_name: currentCollegeName,
-      college_id: profile?.college_id || 'col-iitb',
-      problems_solved_count: profile?.problems_solved_count || 48,
-      score: profile?.score || 890,
-      current_streak: profile?.current_streak || 5,
-    },
-    {
-      rank: 15,
-      id: 'eng-12',
-      username: 'rahul_deshmukh',
-      full_name: 'Rahul Deshmukh',
-      avatar_url: null,
-      college_name: 'College of Engineering, Pune',
-      college_id: 'col-coep',
-      problems_solved_count: 45,
-      score: 870,
-      current_streak: 7,
-    },
-  ], [user?.id, profile, currentCollegeName]);
+  // 1. Fetch genuine user profiles from Supabase (Zero mock data)
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      if (!isSupabaseConfigured()) {
+        setEngineers([]);
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, username, score, problems_solved_count, current_streak, college_id, colleges:college_id(name)')
+          .order('score', { ascending: false });
 
-  // College-Specific Standings
+        if (!error && data) {
+          const mapped: LeaderboardEntry[] = data.map((row: any, idx: number) => {
+            const col = Array.isArray(row.colleges) ? row.colleges[0] : row.colleges;
+            return {
+              rank: idx + 1,
+              id: row.id,
+              username: row.username || 'dev',
+              full_name: row.full_name || 'Developer',
+              avatar_url: row.avatar_url || null,
+              college_name: col?.name || 'Independent / Not Affiliated',
+              college_id: row.college_id || null,
+              problems_solved_count: row.problems_solved_count || 0,
+              score: row.score || 0,
+              current_streak: row.current_streak || 0,
+            };
+          });
+          setEngineers(mapped);
+        } else {
+          setEngineers([]);
+        }
+      } catch (err) {
+        console.warn('Leaderboard query error:', err);
+        setEngineers([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLeaderboard();
+  }, []);
+
+  const globalEngineers = engineers;
+
+  // College-Specific Standings (Only genuine peers enrolled in same college)
   const collegeEngineers = useMemo(() => {
+    if (!profile?.college_id && !profile?.college_name) return [];
     const list = globalEngineers.filter(
-      (e) => e.college_name === currentCollegeName
+      (e) =>
+        (profile.college_id && e.college_id === profile.college_id) ||
+        (profile.college_name && e.college_name === profile.college_name)
     );
-    // Recalculate rank within college
     return list.map((item, idx) => ({
       ...item,
       rank: idx + 1,
     }));
-  }, [globalEngineers, currentCollegeName]);
+  }, [globalEngineers, profile]);
 
   // Campus League
   const campusLeague: CampusLeagueEntry[] = useMemo(() => {
@@ -208,7 +111,11 @@ export const LeaderboardView: React.FC = () => {
 
   const tabs = [
     { id: 'global', label: 'Global Standings', icon: <Trophy className="w-3.5 h-3.5" /> },
-    { id: 'college', label: `My College (${currentCollegeName.split(' ')[0]})`, icon: <GraduationCap className="w-3.5 h-3.5" /> },
+    {
+      id: 'college',
+      label: `My College (${currentCollegeName.split(' ')[0]})`,
+      icon: <GraduationCap className="w-3.5 h-3.5" />,
+    },
     { id: 'campuses', label: 'Campus League', icon: <Building2 className="w-3.5 h-3.5" /> },
   ];
 
@@ -269,9 +176,15 @@ export const LeaderboardView: React.FC = () => {
     return <span className="font-mono text-text-muted">#{rank}</span>;
   };
 
-  const currentUserCollegeRank = collegeEngineers.find(
-    (e) => e.username === (profile?.username || 'you_engineer')
-  )?.rank || 3;
+  const currentUserGlobalRank = useMemo(() => {
+    const me = globalEngineers.find((e) => e.id === user?.id || e.username === profile?.username);
+    return me ? me.rank : 1;
+  }, [globalEngineers, user?.id, profile?.username]);
+
+  const currentUserCollegeRank = useMemo(() => {
+    const me = collegeEngineers.find((e) => e.id === user?.id || e.username === profile?.username);
+    return me ? me.rank : 1;
+  }, [collegeEngineers, user?.id, profile?.username]);
 
   return (
     <div className="py-8 space-y-8 text-left">
@@ -284,17 +197,19 @@ export const LeaderboardView: React.FC = () => {
           actions={
             <div className="p-3.5 rounded-lg border border-primary/30 bg-[#181C28] flex items-center gap-3.5 shrink-0 shadow-sm">
               <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-mono font-bold text-sm">
-                #{currentUserCollegeRank}
+                #{profile?.college_id ? currentUserCollegeRank : currentUserGlobalRank}
               </div>
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
-                  Your College Standing
+                  {profile?.college_id ? 'Your College Standing' : 'Your Global Standing'}
                 </p>
                 <p className="text-[13px] font-semibold font-sans text-text-primary">
-                  Rank #{currentUserCollegeRank} in {currentCollegeName.split(' ')[0]}
+                  {profile?.college_id
+                    ? `Rank #${currentUserCollegeRank} in ${currentCollegeName.split(' ')[0]}`
+                    : `Rank #${currentUserGlobalRank} Worldwide`}
                 </p>
                 <p className="text-[11px] text-text-secondary font-mono">
-                  {profile?.score || 890} pts • {profile?.problems_solved_count || 48} Solved
+                  {profile?.score || 0} pts • {profile?.problems_solved_count || 0} Solved
                 </p>
               </div>
             </div>
@@ -329,78 +244,88 @@ export const LeaderboardView: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Rank</TableHead>
-                    <TableHead>Software Engineer</TableHead>
-                    <TableHead>Affiliated Institution</TableHead>
-                    <TableHead className="text-right">Solved</TableHead>
-                    <TableHead className="text-right">Streak</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredGlobal.map((eng) => {
-                    const isMe = eng.id === user?.id || eng.username === profile?.username;
-                    return (
-                      <TableRow
-                        key={eng.id}
-                        className={isMe ? 'bg-primary/10 border-l-2 border-primary' : undefined}
-                      >
-                        <TableCell className="font-semibold font-mono">
-                          {renderRankBadge(eng.rank)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border text-primary font-mono text-xs flex items-center justify-center font-bold">
-                              {eng.full_name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')
-                                .substring(0, 2)
-                                .toUpperCase()}
+              {loading ? (
+                <div className="py-12 text-center text-xs font-mono text-text-muted">
+                  Loading verified engineer rankings...
+                </div>
+              ) : filteredGlobal.length === 0 ? (
+                <div className="py-12 text-center text-xs font-mono text-text-muted">
+                  No registered engineers found.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Rank</TableHead>
+                      <TableHead>Software Engineer</TableHead>
+                      <TableHead>Affiliated Institution</TableHead>
+                      <TableHead className="text-right">Solved</TableHead>
+                      <TableHead className="text-right">Streak</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredGlobal.map((eng) => {
+                      const isMe = eng.id === user?.id || eng.username === profile?.username;
+                      return (
+                        <TableRow
+                          key={eng.id}
+                          className={isMe ? 'bg-primary/10 border-l-2 border-primary' : undefined}
+                        >
+                          <TableCell className="font-semibold font-mono">
+                            {renderRankBadge(eng.rank)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border text-primary font-mono text-xs flex items-center justify-center font-bold">
+                                {eng.full_name
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .substring(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-semibold text-text-primary block truncate">
+                                  {eng.full_name} {isMe && <Badge variant="primary" className="ml-1 text-[10px]">You</Badge>}
+                                </span>
+                                <span className="text-[11px] font-mono text-text-muted block truncate">
+                                  @{eng.username}
+                                </span>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <span className="font-semibold text-text-primary block truncate">
-                                {eng.full_name} {isMe && <Badge variant="primary" className="ml-1 text-[10px]">You</Badge>}
-                              </span>
-                              <span className="text-[11px] font-mono text-text-muted block truncate">
-                                @{eng.username}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-text-secondary text-xs flex items-center gap-1.5 truncate">
-                            <GraduationCap className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                            {eng.college_name || 'Independent Engineer'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          <span className="inline-flex items-center gap-1 text-emerald-500">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {eng.problems_solved_count}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {eng.current_streak ? (
-                            <span className="inline-flex items-center gap-1 text-amber-500">
-                              <Flame className="w-3.5 h-3.5" />
-                              {eng.current_streak}d
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-text-secondary text-xs flex items-center gap-1.5 truncate">
+                              <GraduationCap className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                              {eng.college_name || 'Independent Engineer'}
                             </span>
-                          ) : (
-                            <span className="text-text-muted">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-text-primary">
-                          {eng.score.toLocaleString()} pts
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium">
+                            <span className="inline-flex items-center gap-1 text-emerald-500">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {eng.problems_solved_count}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {eng.current_streak ? (
+                              <span className="inline-flex items-center gap-1 text-amber-500">
+                                <Flame className="w-3.5 h-3.5" />
+                                {eng.current_streak}d
+                              </span>
+                            ) : (
+                              <span className="text-text-muted">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-text-primary">
+                            {eng.score.toLocaleString()} pts
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         )}
@@ -433,98 +358,108 @@ export const LeaderboardView: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Campus Rank</TableHead>
-                    <TableHead>Peer Engineer</TableHead>
-                    <TableHead className="text-right">Problems Solved</TableHead>
-                    <TableHead className="text-right">Active Streak</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCollege.map((eng) => {
-                    const isMe = eng.id === user?.id || eng.username === profile?.username;
-                    return (
-                      <TableRow
-                        key={eng.id}
-                        className={isMe ? 'bg-primary/10 border-l-2 border-primary' : undefined}
-                      >
-                        <TableCell className="font-semibold font-mono">
-                          {renderRankBadge(eng.rank)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border text-primary font-mono text-xs flex items-center justify-center font-bold">
-                              {eng.full_name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')
-                                .substring(0, 2)
-                                .toUpperCase()}
+              {loading ? (
+                <div className="py-12 text-center text-xs font-mono text-text-muted">
+                  Loading campus peers...
+                </div>
+              ) : filteredCollege.length === 0 ? (
+                <div className="py-12 text-center text-xs font-mono text-text-muted">
+                  No other engineers from {currentCollegeName} registered yet.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Campus Rank</TableHead>
+                      <TableHead>Peer Engineer</TableHead>
+                      <TableHead className="text-right">Problems Solved</TableHead>
+                      <TableHead className="text-right">Active Streak</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCollege.map((eng) => {
+                      const isMe = eng.id === user?.id || eng.username === profile?.username;
+                      return (
+                        <TableRow
+                          key={eng.id}
+                          className={isMe ? 'bg-primary/10 border-l-2 border-primary' : undefined}
+                        >
+                          <TableCell className="font-semibold font-mono">
+                            {renderRankBadge(eng.rank)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border text-primary font-mono text-xs flex items-center justify-center font-bold">
+                                {eng.full_name
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .substring(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-semibold text-text-primary block truncate">
+                                  {eng.full_name} {isMe && <Badge variant="primary" className="ml-1 text-[10px]">You</Badge>}
+                                </span>
+                                <span className="text-[11px] font-mono text-text-muted block truncate">
+                                  @{eng.username}
+                                </span>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <span className="font-semibold text-text-primary block truncate">
-                                {eng.full_name} {isMe && <Badge variant="primary" className="ml-1 text-[10px]">You</Badge>}
-                              </span>
-                              <span className="text-[11px] font-mono text-text-muted block truncate">
-                                @{eng.username}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          <span className="inline-flex items-center gap-1 text-emerald-500">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {eng.problems_solved_count}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {eng.current_streak ? (
-                            <span className="inline-flex items-center gap-1 text-amber-500">
-                              <Flame className="w-3.5 h-3.5" />
-                              {eng.current_streak}d
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium">
+                            <span className="inline-flex items-center gap-1 text-emerald-500">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {eng.problems_solved_count}
                             </span>
-                          ) : (
-                            <span className="text-text-muted">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-text-primary">
-                          {eng.score.toLocaleString()} pts
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {eng.current_streak ? (
+                              <span className="inline-flex items-center gap-1 text-amber-500">
+                                <Flame className="w-3.5 h-3.5" />
+                                {eng.current_streak}d
+                              </span>
+                            ) : (
+                              <span className="text-text-muted">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-text-primary">
+                            {eng.score.toLocaleString()} pts
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         )}
 
-        {/* TAB 3: Campus League */}
+        {/* TAB 3: Campus League Standings */}
         {activeTab === 'campuses' && (
           <Card className="border-border shadow-elevation-1">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Campus League (Intercollegiate Rankings)</CardTitle>
+                  <CardTitle className="text-base">All-India Campus League</CardTitle>
                   <CardDescription className="text-xs">
-                    Engineering colleges and institutes ranked by cumulative student score and active problem solvers.
+                    Institutional rankings aggregated across all enrolled student engineers.
                   </CardDescription>
                 </div>
-                <Badge variant="neutral">{filteredCampuses.length} Institutions</Badge>
+                <Badge variant="neutral">{filteredCampuses.length} Campuses</Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Rank</TableHead>
+                    <TableHead className="w-16">League Rank</TableHead>
                     <TableHead>Institution</TableHead>
-                    <TableHead>Region / State</TableHead>
-                    <TableHead className="text-right">Enrolled Students</TableHead>
-                    <TableHead className="text-right">Aggregate Score</TableHead>
+                    <TableHead>State / Region</TableHead>
+                    <TableHead className="text-right">Active Students</TableHead>
+                    <TableHead className="text-right">Total Score</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -540,32 +475,25 @@ export const LeaderboardView: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2.5">
-                            <Building2 className="w-4 h-4 text-text-muted shrink-0" />
-                            <div className="min-w-0">
-                              <span className="font-semibold text-text-primary block truncate">
-                                {col.name}
-                              </span>
-                              {isMyCollege && (
-                                <span className="text-[10px] text-primary font-mono font-semibold">
-                                  Your Enrolled Campus
-                                </span>
-                              )}
-                            </div>
+                            <Building2 className="w-4 h-4 text-primary shrink-0" />
+                            <span className="font-semibold text-text-primary">
+                              {col.name} {isMyCollege && <Badge variant="primary" className="ml-1 text-[10px]">Your Campus</Badge>}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-xs text-text-secondary">
-                            {col.state}, {col.country}
+                          <span className="text-text-secondary text-xs">
+                            {col.state || 'National'}, {col.country || 'India'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          {col.student_count.toLocaleString()} engineers
+                        <TableCell className="text-right font-mono text-xs">
+                          <span className="inline-flex items-center gap-1 text-text-muted">
+                            <Users className="w-3 h-3" />
+                            {col.student_count}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right font-mono font-bold text-text-primary">
-                          <span className="inline-flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-primary" />
-                            {col.total_score.toLocaleString()} pts
-                          </span>
+                          {col.total_score.toLocaleString()} pts
                         </TableCell>
                       </TableRow>
                     );

@@ -27,6 +27,7 @@ import {
 import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 import { runCode } from '@/lib/submissionService';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
+import { useAuth } from '@/hooks/useAuth';
 import { ProgrammingLanguage } from '@/types';
 
 export interface ScratchTab {
@@ -132,14 +133,15 @@ func main() {
 
 export const StandaloneIdeView: React.FC = () => {
   const { toast } = useToast();
+  const { preferredLanguage, updatePreferredLanguage } = useAuth();
 
   // Tab State
   const [tabs, setTabs] = useState<ScratchTab[]>([
     {
       id: 'tab-1',
       title: 'Code 1',
-      language: 'cpp',
-      code: DEFAULT_TEMPLATES.cpp.template,
+      language: preferredLanguage || 'java',
+      code: (DEFAULT_TEMPLATES[preferredLanguage || 'java'] || DEFAULT_TEMPLATES.java).template,
       stdin: 'Hello World 42',
     },
     {
@@ -151,6 +153,18 @@ export const StandaloneIdeView: React.FC = () => {
     },
   ]);
   const [activeTabId, setActiveTabId] = useState<string>('tab-1');
+
+  useEffect(() => {
+    if (preferredLanguage) {
+      setTabs((prev) => {
+        if (prev.length > 0 && prev[0].id === 'tab-1' && prev[0].language !== preferredLanguage) {
+          const templ = (DEFAULT_TEMPLATES[preferredLanguage] || DEFAULT_TEMPLATES.java).template;
+          return prev.map((t, idx) => (idx === 0 ? { ...t, language: preferredLanguage, code: templ } : t));
+        }
+        return prev;
+      });
+    }
+  }, [preferredLanguage]);
 
   // Active Tab Derived
   const activeTab = useMemo(
@@ -242,6 +256,7 @@ export const StandaloneIdeView: React.FC = () => {
 
   // Change language
   const handleLanguageChange = (newLang: string) => {
+    updatePreferredLanguage(newLang);
     setTabs((prev) =>
       prev.map((t) => {
         if (t.id === activeTab.id) {

@@ -95,12 +95,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               to="/app/revision"
               icon={<Repeat />}
               label="Revision"
-              badge={2}
-              badgeVariant="warning"
               collapsed={collapsed}
             />
             <NavItem
-              to="/app/plan"
+              to="/app/study-plan"
               icon={<CalendarCheck2 />}
               label="Study Plan"
               collapsed={collapsed}

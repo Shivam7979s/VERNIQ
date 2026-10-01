@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/ui/layout/DashboardLayout';
 import { RadialProgressRing } from '@/components/profile/RadialProgressRing';
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/actions/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useUserTelemetry } from '@/hooks/useUserTelemetry';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
+import { FALLBACK_PROBLEMS } from '@/lib/curriculumData';
 import {
   Flame,
   Trophy,
@@ -17,9 +19,9 @@ import {
   ArrowRight,
   BookOpen,
   Building2,
-  Sparkles,
   ExternalLink,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TargetProblem {
   id: string;
@@ -30,49 +32,15 @@ interface TargetProblem {
   tags: string[];
 }
 
-const TODAY_TARGETS: TargetProblem[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000303',
-    slug: '3sum',
-    title: '3Sum',
-    difficulty: 'medium',
-    estimatedMinutes: 25,
-    tags: ['Two Pointers', 'Array'],
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000305',
-    slug: 'container-with-most-water',
-    title: 'Container With Most Water',
-    difficulty: 'medium',
-    estimatedMinutes: 20,
-    tags: ['Two Pointers', 'Greedy'],
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000306',
-    slug: 'trapping-rain-water',
-    title: 'Trapping Rain Water',
-    difficulty: 'hard',
-    estimatedMinutes: 40,
-    tags: ['Two Pointers', 'Monotonic Stack'],
-  },
-];
-
-interface CampusPeer {
+interface RealCampusPeer {
   rank: number;
+  id: string;
   name: string;
   username: string;
   solved: number;
   score: number;
-  isCurrentUser?: boolean;
+  isCurrentUser: boolean;
 }
-
-const SEEDED_CAMPUS_PEERS: CampusPeer[] = [
-  { rank: 1, name: 'Aditya Verma', username: 'aditya_v', solved: 142, score: 2840 },
-  { rank: 2, name: 'Priya Nair', username: 'priya_n', solved: 128, score: 2560 },
-  { rank: 3, name: 'Rohan Deshmukh', username: 'rohan_d', solved: 116, score: 2320 },
-  { rank: 4, name: 'Ananya Roy', username: 'ananya_r', solved: 98, score: 1960 },
-  { rank: 5, name: 'Vikram Joshi', username: 'vikram_j', solved: 91, score: 1820 },
-];
 
 export const DashboardView: React.FC = () => {
   const { profile, user } = useAuth();
@@ -82,8 +50,9 @@ export const DashboardView: React.FC = () => {
   const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || (user ? 'Developer' : 'Guest Developer');
   const collegeName = profile?.college_name || (profile?.college_id ? 'Affiliated College' : 'Independent');
   const streak = telemetry.currentStreak > 0 ? telemetry.currentStreak : profile?.current_streak || 0;
-  const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : '-';
+  const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : '1';
 
+  // Real solved count
   const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
   const solvedCount = telemetry.solvedCount > 0
     ? telemetry.solvedCount
@@ -95,18 +64,184 @@ export const DashboardView: React.FC = () => {
   const mediumSolved = Math.round(solvedCount * 0.4);
   const hardSolved = Math.max(0, solvedCount - easySolved - mediumSolved);
 
-  // Generate 30-day activity data dynamically based on real submissions from database
-  const today = new Date();
-  const recentDays = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (29 - i));
-    const dateStr = d.toISOString().split('T')[0];
-    const isCompleted = (telemetry.activityMap[dateStr] || 0) > 0;
-    return {
-      day: i + 1,
-      completed: isCompleted,
-    };
+  // 1. Dynamic unsolved targets
+  const [targetProblems, setTargetProblems] = useState<TargetProblem[]>([]);
+  const [activeContinueProblem, setActiveContinueProblem] = useState<TargetProblem>({
+    id: '00000000-0000-0000-0000-000000000304',
+    slug: 'search-in-rotated-sorted-array',
+    title: 'Search in Rotated Sorted Array',
+    difficulty: 'medium',
+    estimatedMinutes: 25,
+    tags: ['Binary Search', 'Arrays'],
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchTargets() {
+      const solvedSet = new Set(telemetry.solvedProblemIds);
+      Object.entries(progressMap).forEach(([id, status]) => {
+        if (status === 'solved') solvedSet.add(id);
+      });
+
+      try {
+        if (isSupabaseConfigured()) {
+          const { data, error } = await supabase
+            .from('problems')
+            .select('id, title, slug, difficulty, problem_tags(tags(name))')
+            .eq('is_published', true);
+
+          if (!error && data && data.length > 0 && isMounted) {
+            const allMapped: TargetProblem[] = data.map((p: any) => {
+              const tags = (p.problem_tags || []).map((pt: any) => pt.tags?.name).filter(Boolean);
+              return {
+                id: p.id,
+                slug: p.slug,
+                title: p.title,
+                difficulty: p.difficulty,
+                estimatedMinutes: p.difficulty === 'hard' ? 40 : p.difficulty === 'medium' ? 25 : 15,
+                tags: tags.length > 0 ? tags : ['Algorithms'],
+              };
+            });
+
+            // Find unsolved problems
+            const unsolved = allMapped.filter((p) => !solvedSet.has(p.id));
+            if (unsolved.length > 0) {
+              setTargetProblems(unsolved.slice(0, 3));
+              setActiveContinueProblem(unsolved[0]);
+            } else {
+              setTargetProblems(allMapped.slice(0, 3));
+              setActiveContinueProblem(allMapped[0]);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load targets from Supabase:', err);
+      }
+
+      // Fallback
+      if (isMounted) {
+        const unsolvedFallback = FALLBACK_PROBLEMS.filter((p) => !solvedSet.has(p.id)).map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          difficulty: p.difficulty,
+          estimatedMinutes: p.difficulty === 'hard' ? 40 : p.difficulty === 'medium' ? 25 : 15,
+          tags: p.tags || ['Arrays'],
+        }));
+        if (unsolvedFallback.length > 0) {
+          setTargetProblems(unsolvedFallback.slice(0, 3));
+          setActiveContinueProblem(unsolvedFallback[0]);
+        } else {
+          const allFb = FALLBACK_PROBLEMS.map((p) => ({
+            id: p.id,
+            slug: p.slug,
+            title: p.title,
+            difficulty: p.difficulty,
+            estimatedMinutes: 20,
+            tags: p.tags || ['Arrays'],
+          }));
+          setTargetProblems(allFb.slice(0, 3));
+          setActiveContinueProblem(allFb[0]);
+        }
+      }
+    }
+
+    fetchTargets();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [telemetry.solvedProblemIds, progressMap]);
+
+  // 2. Real Campus Standing Peers query from Supabase
+  const [campusPeers, setCampusPeers] = useState<RealCampusPeer[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchCampusPeers() {
+      if (!isSupabaseConfigured() || !profile?.college_id) {
+        if (isMounted && profile) {
+          setCampusPeers([
+            {
+              rank: 1,
+              id: profile.id,
+              name: displayName,
+              username: profile.username || 'dev',
+              solved: solvedCount,
+              score: profile.score || 0,
+              isCurrentUser: true,
+            },
+          ]);
+        }
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, username, score, problems_solved_count')
+          .eq('college_id', profile.college_id)
+          .order('score', { ascending: false })
+          .limit(5);
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const peers: RealCampusPeer[] = data.map((row: any, idx: number) => ({
+            rank: idx + 1,
+            id: row.id,
+            name: row.full_name || 'Developer',
+            username: row.username || 'dev',
+            solved: row.problems_solved_count || 0,
+            score: row.score || 0,
+            isCurrentUser: row.id === user?.id || row.username === profile.username,
+          }));
+          setCampusPeers(peers);
+        } else if (isMounted) {
+          setCampusPeers([
+            {
+              rank: 1,
+              id: profile.id,
+              name: displayName,
+              username: profile.username || 'dev',
+              solved: solvedCount,
+              score: profile.score || 0,
+              isCurrentUser: true,
+            },
+          ]);
+        }
+      } catch (err) {
+        console.warn('Campus peers query failed:', err);
+      }
+    }
+
+    fetchCampusPeers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile?.college_id, profile?.username, profile?.score, solvedCount, user?.id, displayName]);
+
+  // 3. Dynamic 30-Day Activity Pulse (strictly derived from telemetry submissions)
+  const today = useMemo(() => new Date(), []);
+  const recentDays = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (29 - i));
+      const dateStr = d.toISOString().split('T')[0];
+      const isCompleted = (telemetry.activityMap[dateStr] || 0) > 0;
+      return {
+        day: i + 1,
+        dateStr,
+        completed: isCompleted,
+      };
+    });
+  }, [today, telemetry.activityMap]);
+
+  const activeInLast30 = useMemo(() => {
+    return recentDays.filter((d) => d.completed).length;
+  }, [recentDays]);
 
   return (
     <DashboardLayout
@@ -116,158 +251,106 @@ export const DashboardView: React.FC = () => {
       ]}
     >
       <div className="space-y-6 max-w-7xl mx-auto text-left">
-        {/* GUEST BANNER IF UNAUTHENTICATED */}
-        {!user && (
-          <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-center justify-between text-xs font-sans text-amber-300">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 border border-amber-500/40 text-amber-200">
-                Guest Mode
-              </span>
-              <span>You are viewing the dashboard as a Guest Developer. Sign in to track algorithmic progress and persist submissions.</span>
-            </div>
-            <Link to="/login" className="font-semibold underline hover:text-white shrink-0">
-              Sign In →
-            </Link>
-          </div>
-        )}
-
-        {/* TOP BAR: GREETING, ACTIVE STREAK PILL, CAMPUS STANDING */}
-        <div className="p-6 rounded-lg border border-white/[0.08] bg-surface flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-elevation-1">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-text-muted uppercase tracking-wider">
-                Mission Control
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00B8A3] animate-pulse" />
-              <span className="text-xs font-mono text-[#00B8A3]">System Nominal</span>
-            </div>
+        {/* 1. TOP COMMAND BAR: SINGLE-ROW HEADER */}
+        <div className="p-5 sm:p-6 rounded-xl border border-white/[0.08] bg-[#12151E] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-elevation-1">
+          <div className="space-y-0.5">
             <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-[-0.025em]">
               Welcome back, {displayName}
             </h1>
-            <p className="text-sm text-neutral-400 font-sans mt-0.5">
-              DSA Roadmap • TakeUForward A2Z Sheet Target in Progress
+            <p className="text-xs text-text-secondary font-sans">
+              DSA Mastery • Step 1: Learn the Basics & Algorithmic Invariants
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Active Streak Pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#FFC01E]/30 bg-[#FFC01E]/10 text-xs font-mono text-[#FFC01E]">
+            {/* Real Streak Badge */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#FFC01E]/30 bg-[#FFC01E]/10 text-xs font-mono text-[#FFC01E] shadow-xs">
               <Flame className="w-4 h-4 fill-[#FFC01E] text-[#FFC01E]" />
               <span className="font-bold">{streak} Day Streak</span>
-              <span className="text-text-muted hidden sm:inline">{streak > 0 ? '• Active' : '• Start today'}</span>
             </div>
 
-            {/* College Leaderboard Standing */}
+            {/* Campus Rank Pill */}
             <Link
               to="/leaderboard"
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-xs font-mono text-primary hover:bg-primary/20 transition-colors"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-xs font-mono text-primary hover:bg-primary/20 transition-colors shadow-xs"
             >
               <Trophy className="w-4 h-4 text-[#FFC01E]" />
-              <span>
-                {campusRank !== '-' ? (
-                  <>Rank <strong className="text-text-primary">#{campusRank}</strong> in </>
-                ) : null}
-                <span className="truncate max-w-[140px] inline-block align-bottom font-medium">
-                  {collegeName}
-                </span>
+              <span className="truncate max-w-[200px]">
+                {collegeName} • Rank #{campusRank}
               </span>
               <ArrowRight className="w-3 h-3 text-text-muted" />
             </Link>
           </div>
         </div>
 
-        {/* MAIN COCKPIT: LEFT 65% / RIGHT 35% */}
+        {/* 2. MAIN GRID (65% Execution Rail / 35% Telemetry Rail) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ============================================================== */}
-          {/* LEFT 65% (8 COLS): CONTINUE LEARNING & TODAY'S TARGETS */}
+          {/* LEFT RAIL (65% / 8 COLS): ACTION CENTER */}
           {/* ============================================================== */}
           <div className="lg:col-span-8 space-y-6">
-            {/* 1. CONTINUE LEARNING ACTIVE ROADMAP NODE */}
-            <div className="p-6 rounded-lg border border-white/[0.08] bg-surface space-y-4 shadow-elevation-1">
+            {/* Bento Card: "CONTINUE WORKING" */}
+            <div className="border border-white/[0.08] bg-[#12151E] p-5 rounded-xl space-y-4 shadow-elevation-1">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-primary" />
                   <span className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted">
-                    Active Roadmap Progress
+                    Continue Working
                   </span>
                 </div>
                 <Link
                   to="/roadmaps"
                   className="text-xs font-mono text-primary hover:underline flex items-center gap-1"
                 >
-                  <span>View Full Curriculum DAG</span>
+                  <span>View Full Curriculum</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-[11px] font-mono text-[#00B8A3] bg-[#00B8A3]/10 px-2 py-0.5 rounded border border-[#00B8A3]/30 uppercase font-semibold">
-                      Step 3: Solve Problems on Arrays
+                      DSA Mastery Node
                     </span>
-                    <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em] mt-1.5">
-                      Topic 3.3: Medium & Hard Array Problems
-                    </h3>
+                    <DifficultyBadge difficulty={activeContinueProblem.difficulty} />
                   </div>
-                  <span className="text-xs font-mono text-text-secondary tabular-nums">
-                    <strong className="text-text-primary">4</strong> / 6 Solved (67%)
-                  </span>
+                  <h3 className="text-lg font-bold font-sans text-white tracking-[-0.015em]">
+                    {activeContinueProblem.title}
+                  </h3>
+                  <p className="text-xs text-text-secondary font-sans">
+                    Optimal time & space invariants • Focus on binary search index bounds and two-pointer contracts.
+                  </p>
                 </div>
 
-                <p className="text-xs text-text-secondary leading-relaxed font-sans">
-                  Mastering cyclic rotated arrays, monotonic water traps, and multi-pointer invariant contracts.
-                </p>
-
-                {/* Progress bar */}
-                <div className="w-full bg-[#1C212E] h-2.5 rounded-full overflow-hidden border border-white/[0.04]">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full"
-                    style={{ width: '67%' }}
-                  />
-                </div>
-
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="text-xs font-mono text-text-muted">
-                    Next recommended problem: <strong className="text-text-primary">Search in Rotated Sorted Array</strong>
-                  </div>
-                  <Link to="/problems/search-in-rotated-sorted-array">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      leftIcon={<Code2 className="w-4 h-4" />}
-                      className="text-xs font-mono"
-                    >
-                      Launch Workspace IDE
-                    </Button>
-                  </Link>
-                </div>
+                <Link
+                  to={`/problems/${activeContinueProblem.slug}`}
+                  className="shrink-0"
+                >
+                  <button className="bg-[#2563EB] hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 shadow-sm">
+                    <Code2 className="w-4 h-4" />
+                    <span>Launch Workspace IDE →</span>
+                  </button>
+                </Link>
               </div>
             </div>
 
-            {/* 2. TODAY'S TARGET 3-PROBLEM CHECKLIST */}
-            <div className="p-6 rounded-lg border border-white/[0.08] bg-surface space-y-4 shadow-elevation-1">
+            {/* Bento Card: "TODAY'S TARGETS" */}
+            <div className="border border-white/[0.08] bg-[#12151E] p-5 rounded-xl space-y-4 shadow-elevation-1">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-warning" />
-                  <div>
-                    <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
-                      Today's Target Challenge Set
-                    </h3>
-                    <p className="text-[11px] text-text-muted font-sans">
-                      Algorithmically curated based on your current knowledge frontier
-                    </p>
-                  </div>
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
+                    Today's Targets
+                  </h3>
                 </div>
-
-                <span className="text-xs font-mono text-text-secondary bg-[#181C28] px-2.5 py-1 rounded border border-white/[0.08]">
-                  Est. 1h 25m total
+                <span className="text-xs font-mono text-text-muted">
+                  3 Algorithmically Curated Challenges
                 </span>
               </div>
 
-              {/* Problem Rows */}
-              <div className="space-y-3">
-                {TODAY_TARGETS.map((target, idx) => {
+              <div className="space-y-2.5">
+                {targetProblems.map((target, idx) => {
                   const status = progressMap[target.id] || 'todo';
                   const isSolved = status === 'solved';
 
@@ -300,7 +383,7 @@ export const DashboardView: React.FC = () => {
                             </span>
                             <Link
                               to={`/problems/${target.slug}`}
-                              className="text-sm font-sans font-medium text-text-primary hover:text-blue-400 transition-colors truncate"
+                              className="text-sm font-sans font-medium text-text-primary hover:text-primary transition-colors truncate"
                             >
                               {target.title}
                             </Link>
@@ -315,7 +398,7 @@ export const DashboardView: React.FC = () => {
                               {target.tags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="text-[10px] font-mono text-[#8F96A8] bg-[#1C212E] px-1.5 py-0.2 rounded"
+                                  className="text-[10px] font-mono text-neutral-300 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.2 rounded"
                                 >
                                   {tag}
                                 </span>
@@ -325,7 +408,7 @@ export const DashboardView: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Action */}
+                      {/* Direct Solve Button */}
                       <Link to={`/problems/${target.slug}`}>
                         <Button
                           variant="secondary"
@@ -344,10 +427,10 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {/* ============================================================== */}
-          {/* RIGHT 35% (4 COLS): MINI RADIAL, 30-DAY STREAK, CAMPUS LEAGUE */}
+          {/* RIGHT RAIL (35% / 4 COLS): TELEMETRY & STANDINGS */}
           {/* ============================================================== */}
           <div className="lg:col-span-4 space-y-6">
-            {/* 1. MINI RADIAL PROGRESS CIRCLE */}
+            {/* 1. SOLVED DISTRIBUTION CARD */}
             <RadialProgressRing
               solved={solvedCount}
               total={150}
@@ -363,8 +446,8 @@ export const DashboardView: React.FC = () => {
               className="flex-col md:flex-col"
             />
 
-            {/* 2. COMPACT 30-DAY STREAK ACTIVITY GRID */}
-            <div className="p-5 rounded-lg border border-white/[0.08] bg-surface space-y-3 shadow-elevation-1">
+            {/* 2. 30-DAY ACTIVITY PULSE (BINDED STRICTLY TO REAL SUBMISSIONS) */}
+            <div className="p-5 rounded-xl border border-white/[0.08] bg-[#12151E] space-y-3 shadow-elevation-1">
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <Flame className="w-4 h-4 text-[#FFC01E]" />
@@ -373,21 +456,22 @@ export const DashboardView: React.FC = () => {
                   </h4>
                 </div>
                 <span className="text-[11px] font-mono text-[#00B8A3] font-bold">
-                  23 / 30 Active
+                  {activeInLast30} / 30 Active
                 </span>
               </div>
 
-              {/* 30-day dots */}
+              {/* 30-day dots: dark slate (#1C212E) for inactive, vibrant green (#00B8A3) for active */}
               <div className="grid grid-cols-10 gap-1.5 py-1">
                 {recentDays.map((d, idx) => (
                   <div
                     key={idx}
-                    className={`h-4 rounded-[2px] transition-transform duration-75 cursor-pointer flex items-center justify-center text-[8px] font-mono ${
+                    className={cn(
+                      'h-4 rounded-[2px] transition-transform duration-75 cursor-pointer flex items-center justify-center text-[8px] font-mono border',
                       d.completed
-                        ? 'bg-[#10B981] hover:brightness-125'
-                        : 'bg-[#1C212E] hover:border-white/30 border border-transparent'
-                    }`}
-                    title={`Day ${d.day}: ${d.completed ? 'Active Submission' : 'Rest'}`}
+                        ? 'bg-[#00B8A3] border-[#00B8A3]/40 shadow-xs'
+                        : 'bg-[#1C212E] border-transparent hover:border-white/20'
+                    )}
+                    title={`${d.dateStr}: ${d.completed ? 'Active Submission' : 'No Activity'}`}
                   />
                 ))}
               </div>
@@ -398,13 +482,13 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* 3. QUICK CAMPUS LEADERBOARD WIDGET */}
-            <div className="p-5 rounded-lg border border-white/[0.08] bg-surface space-y-3 shadow-elevation-1">
+            {/* 3. CAMPUS STANDING WIDGET (PURE REAL DATA) */}
+            <div className="p-5 rounded-xl border border-white/[0.08] bg-[#12151E] space-y-3 shadow-elevation-1">
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-primary" />
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
-                    Campus Leaderboard Top 5
+                    Campus Leaderboard
                   </h4>
                 </div>
                 <Link
@@ -420,16 +504,22 @@ export const DashboardView: React.FC = () => {
                 Institution: <strong className="text-text-primary">{collegeName}</strong>
               </div>
 
-              {/* Top 5 list */}
+              {/* Real peer list */}
               <div className="space-y-1.5">
-                {SEEDED_CAMPUS_PEERS.map((peer) => (
+                {campusPeers.map((peer) => (
                   <div
-                    key={peer.rank}
-                    className="p-2 rounded border border-white/[0.04] bg-[#181C28] flex items-center justify-between text-xs font-mono"
+                    key={peer.id}
+                    className={cn(
+                      'p-2.5 rounded-lg border text-xs font-mono flex items-center justify-between',
+                      peer.isCurrentUser
+                        ? 'bg-primary/10 border-primary/30 text-white'
+                        : 'bg-[#181C28] border-white/[0.04] text-text-secondary'
+                    )}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        className={cn(
+                          'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
                           peer.rank === 1
                             ? 'bg-[#FFC01E]/20 text-[#FFC01E]'
                             : peer.rank === 2
@@ -437,14 +527,16 @@ export const DashboardView: React.FC = () => {
                             : peer.rank === 3
                             ? 'bg-amber-600/20 text-amber-500'
                             : 'bg-white/[0.06] text-text-muted'
-                        }`}
+                        )}
                       >
-                        {peer.rank}
+                        #{peer.rank}
                       </span>
-                      <span className="text-text-primary truncate text-[12px]">{peer.name}</span>
+                      <span className="text-text-primary font-medium truncate text-xs">
+                        {peer.name} {peer.isCurrentUser && <span className="text-primary text-[10px]">(You)</span>}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <span className="text-[#00B8A3] text-[11px] font-semibold">
                         {peer.solved} AC
                       </span>
@@ -452,23 +544,6 @@ export const DashboardView: React.FC = () => {
                     </div>
                   </div>
                 ))}
-
-                {/* Current user card if outside top 5 */}
-                <div className="p-2 rounded border border-primary/40 bg-primary/10 flex items-center justify-between text-xs font-mono mt-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-5 h-5 rounded-full bg-primary text-text-inverse flex items-center justify-center text-[10px] font-bold">
-                      #{campusRank}
-                    </span>
-                    <span className="text-text-primary font-bold truncate text-[12px]">
-                      {displayName} (You)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[#00B8A3] text-[11px] font-bold">{solvedCount} AC</span>
-                    <span className="text-text-muted text-[11px]">890 pts</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

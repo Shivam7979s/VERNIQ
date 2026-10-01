@@ -23,6 +23,9 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateCollege: (collegeId: string, collegeName: string) => Promise<{ error: Error | null }>;
+  preferredLanguage: string;
+  updatePreferredLanguage: (lang: string) => Promise<{ error: Error | null }>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         const collegeObj = data.colleges as { name?: string } | null;
+        if (data.preferred_language && typeof window !== 'undefined') {
+          localStorage.setItem('verniq_pref_lang', data.preferred_language);
+        }
         setProfile({
           ...(data as UserProfile),
           problems_solved_count: realSolvedCount || data.problems_solved_count || 0,
@@ -260,6 +266,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const preferredLanguage =
+    profile?.preferred_language ||
+    (typeof window !== 'undefined' ? localStorage.getItem('verniq_pref_lang') : null) ||
+    'java';
+
+  const updatePreferredLanguage = async (lang: string): Promise<{ error: Error | null }> => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('verniq_pref_lang', lang);
+      }
+      setProfile((prev) => (prev ? { ...prev, preferred_language: lang } : null));
+
+      if (user && isSupabaseConfigured()) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ preferred_language: lang, updated_at: new Date().toISOString() })
+          .eq('id', user.id);
+        if (error) return { error };
+      }
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>): Promise<{ error: Error | null }> => {
+    try {
+      if (updates.preferred_language && typeof window !== 'undefined') {
+        localStorage.setItem('verniq_pref_lang', updates.preferred_language);
+      }
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+
+      if (user && isSupabaseConfigured()) {
+        const { college_name, ...dbUpdates } = updates as any;
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            ...dbUpdates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+        if (error) return { error };
+      }
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -275,6 +330,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
         refreshProfile,
         updateCollege,
+        preferredLanguage,
+        updatePreferredLanguage,
+        updateProfile,
       }}
     >
       {children}
