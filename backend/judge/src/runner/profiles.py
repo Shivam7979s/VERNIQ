@@ -20,7 +20,7 @@ def get_language_profile(language: str) -> LanguageProfile:
         return LanguageProfile(
             name="cpp",
             source_filename="Solution.cpp",
-            compile_cmd=["g++", "-O3", "-std=c++20", "Solution.cpp", "-o", "solution"],
+            compile_cmd=["g++", "-O3", "-std=c++17", "Solution.cpp", "-o", "solution"],
             run_cmd=[binary_name],
             time_limit_multiplier=1.0,
         )
@@ -45,14 +45,12 @@ def get_language_profile(language: str) -> LanguageProfile:
         )
 
     elif lang in ("typescript", "ts"):
-        # Check if tsx is available directly or through npx
-        tsx_bin = "tsx" if shutil.which("tsx") else "npx"
-        run_cmd = ["tsx", "solution.ts"] if tsx_bin == "tsx" else ["npx", "-y", "tsx", "solution.ts"]
+        node_bin = shutil.which("node") or "node"
         return LanguageProfile(
             name="typescript",
             source_filename="solution.ts",
             compile_cmd=None,
-            run_cmd=run_cmd,
+            run_cmd=[node_bin, "--experimental-strip-types", "solution.ts"],
             time_limit_multiplier=1.5,
         )
 

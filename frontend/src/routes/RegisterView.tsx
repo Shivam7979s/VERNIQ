@@ -18,7 +18,7 @@ export const RegisterView: React.FC = () => {
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
-  const [collegeId, setCollegeId] = useState('col-iitb');
+  const [collegeId, setCollegeId] = useState('187ea122-3e85-443a-8f01-b774389852a0');
   const [collegeName, setCollegeName] = useState('Indian Institute of Technology Bombay');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,8 +37,18 @@ export const RegisterView: React.FC = () => {
       return;
     }
 
-    if (!USERNAME_REGEX.test(username.trim())) {
-      setError('Username must be 3-20 characters consisting of letters, digits, and underscores.');
+    // Auto-sanitize username in case browser autofilled email or special characters
+    let cleanUsername = username.trim().toLowerCase();
+    if (cleanUsername.includes('@')) {
+      cleanUsername = cleanUsername.split('@')[0];
+    }
+    cleanUsername = cleanUsername.replace(/[^a-zA-Z0-9_]/g, '_');
+    if (cleanUsername.length > 20) {
+      cleanUsername = cleanUsername.slice(0, 20);
+    }
+
+    if (!USERNAME_REGEX.test(cleanUsername)) {
+      setError('Username must be 3-20 characters consisting of letters, digits, and underscores (e.g. shivam79).');
       return;
     }
 
@@ -53,7 +63,7 @@ export const RegisterView: React.FC = () => {
     const { error: err } = await signUpWithEmail(
       email.trim(),
       password,
-      username.trim(),
+      cleanUsername,
       fullName.trim(),
       collegeId,
       collegeName
@@ -63,11 +73,8 @@ export const RegisterView: React.FC = () => {
     if (err) {
       setError(err.message || 'Registration failed. Please review your details.');
     } else {
-      if (isConfigured) {
-        setSuccessNotice('Registration successful! Please check your email inbox to verify your account.');
-      } else {
-        navigate('/app/dashboard', { replace: true });
-      }
+      setSuccessNotice('Account created successfully! Redirecting...');
+      navigate('/app/dashboard', { replace: true });
     }
   };
 
@@ -194,13 +201,13 @@ export const RegisterView: React.FC = () => {
                 {({ id, 'aria-describedby': ariaDescribedBy, 'aria-invalid': ariaInvalid }) => (
                   <Input
                     id={id}
-                    placeholder="grace_hopper"
+                    placeholder="shivam79"
                     leftIcon={<AtSign className="w-4 h-4" />}
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase())}
                     aria-describedby={ariaDescribedBy}
                     aria-invalid={ariaInvalid}
-                    autoComplete="username"
+                    autoComplete="nickname"
                   />
                 )}
               </FormField>

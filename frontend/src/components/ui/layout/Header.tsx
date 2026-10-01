@@ -88,19 +88,22 @@ export const Header: React.FC = () => {
           {/* App / Auth Link */}
           {user ? (
             <Link to="/app/dashboard">
-              <Button size="sm" variant="primary">
-                {profile?.username || 'Dashboard'}
+              <Button size="sm" variant="primary" className="text-xs font-mono">
+                {profile?.full_name || profile?.username || 'Dashboard'}
               </Button>
             </Link>
           ) : (
             <div className="flex items-center gap-1.5">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono text-neutral-400 bg-white/[0.04] border border-white/[0.08]">
+                Guest Developer
+              </span>
               <Link to="/login">
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="secondary" className="text-xs">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register" className="hidden sm:inline-block">
-                <Button size="sm" variant="primary">
+                <Button size="sm" variant="primary" className="text-xs">
                   Sign Up
                 </Button>
               </Link>

@@ -109,7 +109,7 @@ BEGIN
   END IF;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
 
 DROP TRIGGER IF EXISTS trigger_sync_college_stats ON public.profiles;
 CREATE TRIGGER trigger_sync_college_stats

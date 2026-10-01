@@ -24,24 +24,27 @@ export const DeveloperIdentityCard: React.FC<DeveloperIdentityCardProps> = ({
   onEditSettings,
   className,
 }) => {
-  const displayName = profile?.full_name || 'Shivam Sharma';
-  const username = profile?.username || 'shivam7979';
-  const roleName = profile?.role || 'student';
-  const collegeName = profile?.college_name || 'Rajiv Gandhi Proudyogiki Vishwavidyalaya';
+  const isGuest = !profile;
+  const displayName = profile?.full_name || (isGuest ? 'Guest Developer' : 'Developer');
+  const username = profile?.username || (isGuest ? 'guest' : 'dev');
+  const roleName = profile?.role || (isGuest ? 'guest' : 'student');
+  const collegeName = profile?.college_name || (profile?.college_id ? 'Affiliated College' : 'Independent');
   const bio =
     profile?.bio ||
-    'Distributed Systems & Algorithmic Engineering @ VERNIQ. Specializing in high-throughput query engines and concurrent data structures.';
+    (isGuest
+      ? 'Sign in to link academic affiliation, track algorithmic telemetry, and compete in campus leagues.'
+      : 'Engineering developer @ VERNIQ.');
 
-  const githubUser = profile?.github_username || 'Shivam7979s';
-  const linkedinUrl = profile?.linkedin_url || 'https://linkedin.com/in/shivam-sharma';
-  const leetcodeUser = profile?.leetcode_username || 'shivam7979';
+  const githubUser = profile?.github_username || null;
+  const linkedinUrl = profile?.linkedin_url || null;
+  const leetcodeUser = profile?.leetcode_username || null;
 
-  const contestRating = 1642;
-  const globalRank = 4210;
-  const campusRank = 14;
-  const problemsSolved = profile?.problems_solved_count ?? 74;
-  const currentStreak = profile?.current_streak ?? 7;
-  const maxStreak = profile?.max_streak ?? 28;
+  const contestRating = profile?.score ? 1200 + profile.score : null;
+  const globalRank = profile?.score ? Math.max(1, 5000 - profile.score * 2) : null;
+  const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : null;
+  const problemsSolved = profile?.problems_solved_count ?? 0;
+  const currentStreak = profile?.current_streak ?? 0;
+  const maxStreak = profile?.max_streak ?? 0;
 
   const initials = displayName
     .split(' ')
@@ -93,7 +96,7 @@ export const DeveloperIdentityCard: React.FC<DeveloperIdentityCardProps> = ({
             </span>
           </div>
           <span className="text-[#FFC01E] font-bold shrink-0 bg-[#FFC01E]/10 px-2 py-0.5 rounded border border-[#FFC01E]/30">
-            Rank #{campusRank}
+            {campusRank ? `Rank #${campusRank}` : 'Independent'}
           </span>
         </div>
       </div>
@@ -113,51 +116,81 @@ export const DeveloperIdentityCard: React.FC<DeveloperIdentityCardProps> = ({
         </span>
 
         {/* GitHub */}
-        <a
-          href={`https://github.com/${githubUser}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
-        >
-          <div className="flex items-center gap-2 text-text-primary">
-            <GithubIcon className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors" />
-            <span className="truncate max-w-[120px]">{githubUser}</span>
+        {githubUser ? (
+          <a
+            href={`https://github.com/${githubUser}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
+          >
+            <div className="flex items-center gap-2 text-text-primary">
+              <GithubIcon className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors" />
+              <span className="truncate max-w-[120px]">{githubUser}</span>
+            </div>
+            <span className="text-[#00B8A3] text-[10px] flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              Linked
+            </span>
+          </a>
+        ) : (
+          <div className="flex items-center justify-between p-2 rounded border border-white/[0.04] bg-[#181C28]/40 text-xs font-mono text-neutral-500">
+            <div className="flex items-center gap-2">
+              <GithubIcon className="w-4 h-4 text-neutral-600" />
+              <span>GitHub</span>
+            </div>
+            <span className="text-[10px] text-neutral-600">Not linked</span>
           </div>
-          <span className="text-[#00B8A3] text-[10px] flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            Synced
-          </span>
-        </a>
+        )}
 
         {/* LeetCode */}
-        <a
-          href={`https://leetcode.com/${leetcodeUser}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
-        >
-          <div className="flex items-center gap-2 text-text-primary">
-            <Code2 className="w-4 h-4 text-[#FFA116] group-hover:text-[#FFA116]" />
-            <span className="truncate max-w-[120px]">{leetcodeUser}</span>
+        {leetcodeUser ? (
+          <a
+            href={`https://leetcode.com/${leetcodeUser}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
+          >
+            <div className="flex items-center gap-2 text-text-primary">
+              <Code2 className="w-4 h-4 text-[#FFA116] group-hover:text-[#FFA116]" />
+              <span className="truncate max-w-[120px]">{leetcodeUser}</span>
+            </div>
+            <span className="text-primary text-[10px] flex items-center gap-1 font-mono">
+              {contestRating ? `${contestRating} Rating` : 'Linked'}
+            </span>
+          </a>
+        ) : (
+          <div className="flex items-center justify-between p-2 rounded border border-white/[0.04] bg-[#181C28]/40 text-xs font-mono text-neutral-500">
+            <div className="flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-neutral-600" />
+              <span>LeetCode</span>
+            </div>
+            <span className="text-[10px] text-neutral-600">Not linked</span>
           </div>
-          <span className="text-primary text-[10px] flex items-center gap-1 font-mono">
-            {contestRating} Rating
-          </span>
-        </a>
+        )}
 
         {/* LinkedIn */}
-        <a
-          href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
-        >
-          <div className="flex items-center gap-2 text-text-primary">
-            <Globe className="w-4 h-4 text-[#0A66C2]" />
-            <span className="truncate max-w-[120px]">LinkedIn</span>
+        {linkedinUrl ? (
+          <a
+            href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2 rounded border border-white/[0.06] bg-[#181C28] hover:bg-white/[0.04] transition-colors text-xs font-mono group"
+          >
+            <div className="flex items-center gap-2 text-text-primary">
+              <Globe className="w-4 h-4 text-[#0A66C2]" />
+              <span className="truncate max-w-[120px]">LinkedIn</span>
+            </div>
+            <ExternalLink className="w-3 h-3 text-text-muted group-hover:text-text-primary" />
+          </a>
+        ) : (
+          <div className="flex items-center justify-between p-2 rounded border border-white/[0.04] bg-[#181C28]/40 text-xs font-mono text-neutral-500">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-neutral-600" />
+              <span>LinkedIn</span>
+            </div>
+            <span className="text-[10px] text-neutral-600">Not linked</span>
           </div>
-          <ExternalLink className="w-3 h-3 text-text-muted group-hover:text-text-primary" />
-        </a>
+        )}
       </div>
 
       {/* Community / Platform Standing Stats */}
@@ -170,17 +203,17 @@ export const DeveloperIdentityCard: React.FC<DeveloperIdentityCardProps> = ({
           <div className="p-2.5 rounded bg-[#181C28] border border-white/[0.06]">
             <span className="text-[10px] text-text-muted block uppercase">Contest Rating</span>
             <span className="text-base font-bold text-primary tabular-nums">
-              {contestRating}
+              {contestRating ?? '—'}
             </span>
-            <span className="text-[10px] text-[#00B8A3] block">Top 8.2%</span>
+            <span className="text-[10px] text-[#00B8A3] block">{contestRating ? 'Active Rating' : 'Unranked'}</span>
           </div>
 
           <div className="p-2.5 rounded bg-[#181C28] border border-white/[0.06]">
             <span className="text-[10px] text-text-muted block uppercase">Global Rank</span>
             <span className="text-base font-bold text-text-primary tabular-nums">
-              #{globalRank.toLocaleString()}
+              {globalRank ? `#${globalRank.toLocaleString()}` : '—'}
             </span>
-            <span className="text-[10px] text-text-muted block">of 62,400</span>
+            <span className="text-[10px] text-text-muted block">Campus Standings</span>
           </div>
 
           <div className="p-2.5 rounded bg-[#181C28] border border-white/[0.06]">

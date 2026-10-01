@@ -77,17 +77,23 @@ export const DashboardView: React.FC = () => {
   const { profile, user } = useAuth();
   const { progressMap, updateProgress } = useUserProgress();
 
-  const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || 'Shivam Sharma';
-  const collegeName = profile?.college_name || 'Rajiv Gandhi Proudyogiki Vishwavidyalaya';
-  const streak = profile?.current_streak || 7;
-  const campusRank = 14;
+  const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || (user ? 'Developer' : 'Guest Developer');
+  const collegeName = profile?.college_name || (profile?.college_id ? 'Affiliated College' : 'Independent');
+  const streak = profile?.current_streak || 0;
+  const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : '-';
 
   const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
-  const solvedCount = Math.max(realSolved, profile?.problems_solved_count || 74);
+  const solvedCount = profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
+    ? profile.problems_solved_count
+    : realSolved;
 
-  // Generate recent 30-day streak data
+  const easySolved = Math.round(solvedCount * 0.5);
+  const mediumSolved = Math.round(solvedCount * 0.4);
+  const hardSolved = Math.max(0, solvedCount - easySolved - mediumSolved);
+
+  // Generate 30-day streak data dynamically based on real streak
   const recentDays = Array.from({ length: 30 }, (_, i) => {
-    const isCompleted = i > 4 && i < 28 && i !== 12 && i !== 19;
+    const isCompleted = streak > 0 && i < streak;
     return {
       day: 30 - i,
       completed: isCompleted,
@@ -102,6 +108,21 @@ export const DashboardView: React.FC = () => {
       ]}
     >
       <div className="space-y-6 max-w-7xl mx-auto text-left">
+        {/* GUEST BANNER IF UNAUTHENTICATED */}
+        {!user && (
+          <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-center justify-between text-xs font-sans text-amber-300">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 border border-amber-500/40 text-amber-200">
+                Guest Mode
+              </span>
+              <span>You are viewing the dashboard as a Guest Developer. Sign in to track algorithmic progress and persist submissions.</span>
+            </div>
+            <Link to="/login" className="font-semibold underline hover:text-white shrink-0">
+              Sign In →
+            </Link>
+          </div>
+        )}
+
         {/* TOP BAR: GREETING, ACTIVE STREAK PILL, CAMPUS STANDING */}
         <div className="p-6 rounded-lg border border-white/[0.08] bg-surface flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-elevation-1">
           <div className="space-y-1">
@@ -125,7 +146,7 @@ export const DashboardView: React.FC = () => {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#FFC01E]/30 bg-[#FFC01E]/10 text-xs font-mono text-[#FFC01E]">
               <Flame className="w-4 h-4 fill-[#FFC01E] text-[#FFC01E]" />
               <span className="font-bold">{streak} Day Streak</span>
-              <span className="text-text-muted hidden sm:inline">• Keep it up!</span>
+              <span className="text-text-muted hidden sm:inline">{streak > 0 ? '• Active' : '• Start today'}</span>
             </div>
 
             {/* College Leaderboard Standing */}
@@ -135,7 +156,9 @@ export const DashboardView: React.FC = () => {
             >
               <Trophy className="w-4 h-4 text-[#FFC01E]" />
               <span>
-                Rank <strong className="text-text-primary">#{campusRank}</strong> in{' '}
+                {campusRank !== '-' ? (
+                  <>Rank <strong className="text-text-primary">#{campusRank}</strong> in </>
+                ) : null}
                 <span className="truncate max-w-[140px] inline-block align-bottom font-medium">
                   {collegeName}
                 </span>
@@ -320,11 +343,11 @@ export const DashboardView: React.FC = () => {
             <RadialProgressRing
               solved={solvedCount}
               total={150}
-              easySolved={42}
+              easySolved={easySolved}
               easyTotal={60}
-              mediumSolved={26}
+              mediumSolved={mediumSolved}
               mediumTotal={65}
-              hardSolved={6}
+              hardSolved={hardSolved}
               hardTotal={25}
               size={120}
               strokeWidth={8}

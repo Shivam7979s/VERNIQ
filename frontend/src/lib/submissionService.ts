@@ -1,22 +1,24 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Submission, ProgrammingLanguage, SubmissionVerdict } from '@/types';
+import { Submission, ProgrammingLanguage } from '@/types';
 
-// In-memory mock store for local/offline execution simulations
-const mockSubmissions = new Map<string, Submission>();
-const mockListeners = new Map<string, Set<(sub: Submission) => void>>();
+const JUDGE_WORKER_URL =
+  import.meta.env.VITE_JUDGE_SERVICE_URL || 'http://127.0.0.1:8080';
+
+// In-memory active submissions store and listeners
+const activeSubmissions = new Map<string, Submission>();
+const submissionListeners = new Map<string, Set<(sub: Submission) => void>>();
 
 export function subscribeToMockSubmission(
   submissionId: string,
   callback: (sub: Submission) => void
 ): () => void {
-  if (!mockListeners.has(submissionId)) {
-    mockListeners.set(submissionId, new Set());
+  if (!submissionListeners.has(submissionId)) {
+    submissionListeners.set(submissionId, new Set());
   }
-  const set = mockListeners.get(submissionId)!;
+  const set = submissionListeners.get(submissionId)!;
   set.add(callback);
 
-  // If already exists, fire initial state
-  const existing = mockSubmissions.get(submissionId);
+  const existing = activeSubmissions.get(submissionId);
   if (existing) {
     callback(existing);
   }
@@ -24,92 +26,107 @@ export function subscribeToMockSubmission(
   return () => {
     set.delete(callback);
     if (set.size === 0) {
-      mockListeners.delete(submissionId);
+      submissionListeners.delete(submissionId);
     }
   };
 }
 
-function notifyMockListeners(sub: Submission) {
-  mockSubmissions.set(sub.id, sub);
-  const set = mockListeners.get(sub.id);
+function updateSubmissionState(sub: Submission) {
+  activeSubmissions.set(sub.id, sub);
+  const set = submissionListeners.get(sub.id);
   if (set) {
     set.forEach((cb) => cb(sub));
   }
 }
 
 /**
- * Simulates isolated worker execution when backend judge is offline/mock mode.
+ * Executes code against the live judge execution worker.
  */
-function simulateJudgeExecution(
+async function executeViaJudgeWorker(
   submissionId: string,
-  _problemId: string | null,
-  code: string,
   language: ProgrammingLanguage,
+  code: string,
   stdin: string,
-  isCustomRun: boolean
-) {
-  // Step 1: Transition to 'running'
-  setTimeout(() => {
-    const current = mockSubmissions.get(submissionId);
-    if (!current) return;
+  isCustomRun: boolean,
+  testCases?: Array<{ input: string; expected_output?: string; is_sample?: boolean }>
+): Promise<Submission> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    const runningSub: Submission = {
-      ...current,
-      verdict: 'running',
+  try {
+    const response = await fetch(`${JUDGE_WORKER_URL}/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        language,
+        source_code: code,
+        stdin_input: stdin,
+        is_custom_run: isCustomRun,
+        test_cases: testCases,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Worker responded with status ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    const completedSub: Submission = {
+      id: submissionId,
+      user_id: 'local-user',
+      language,
+      source_code: code,
+      stdin_input: stdin,
+      verdict: result.verdict,
+      runtime_ms: result.runtime_ms || 0,
+      memory_kb: result.memory_kb || 0,
+      stdout_output: result.stdout_output || null,
+      stderr_output: result.stderr_output || null,
+      compile_output: result.compile_output || null,
+      test_cases_passed: result.test_cases_passed ?? (result.verdict === 'accepted' ? 1 : 0),
+      total_test_cases: result.total_test_cases ?? 1,
+      is_custom_run: isCustomRun,
+      created_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
     };
-    notifyMockListeners(runningSub);
 
-    // Step 2: Evaluate code and generate verdict
-    const execDelay = Math.floor(Math.random() * 400) + 400; // 400-800ms
-    setTimeout(() => {
-      let verdict: SubmissionVerdict = 'accepted';
-      let stdout = '';
-      let stderr = '';
-      let compileOutput = '';
-      const runtimeMs = Math.floor(Math.random() * 20) + 12; // 12-32ms
-      const memoryKb = Math.floor(Math.random() * 2000) + 14200; // ~14-16MB
-      let passedCases = isCustomRun ? 1 : 24;
-      const totalCases = isCustomRun ? 1 : 24;
+    updateSubmissionState(completedSub);
+    return completedSub;
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    const isTimeout = (err as Error)?.name === 'AbortError';
+    const errorMsg = isTimeout
+      ? '[ERROR] Judge worker request timed out after 10 seconds.'
+      : '[ERROR] Judge worker is offline. Please ensure the backend execution worker daemon is running.';
 
-      // Intelligent code heuristics for rich demonstration
-      const trimmed = code.trim();
-      if (trimmed.includes('throw new Error') || trimmed.includes('raise Exception') || trimmed.includes('panic(')) {
-        verdict = 'runtime_error';
-        stderr = `RuntimeError: Execution halted with unhandled exception at line 14: \n  Exception: User-triggered exception`;
-      } else if (trimmed.includes('while(true)') || trimmed.includes('while (true)') || trimmed.includes('for(;;)') || trimmed.includes('time.sleep(10)')) {
-        verdict = 'time_limit_exceeded';
-        stderr = 'Time Limit Exceeded: Execution terminated after exceeding 2000ms threshold.';
-      } else if (trimmed.length < 15 || !trimmed.includes('{') && !trimmed.includes('def') && !trimmed.includes('class') && !trimmed.includes('package')) {
-        verdict = 'compilation_error';
-        compileOutput = `Compilation failed:\n  Error: unexpected token or syntax error in ${language} source`;
-        passedCases = 0;
-      } else {
-        verdict = 'accepted';
-        if (isCustomRun) {
-          stdout = stdin.trim()
-            ? `[OUTPUT]\nProcessed stdin input:\n${stdin}`
-            : `[OUTPUT]\nHello from VERNIQ Isolated Sandbox (${language.toUpperCase()})!\nExecution completed cleanly with exit code 0.`;
-        } else {
-          stdout = `[VERNIQ JUDGE]\nAll test vectors evaluated against isolated container.\nVerified outputs match canonical solutions.`;
-        }
-      }
+    const failedSub: Submission = {
+      id: submissionId,
+      user_id: 'local-user',
+      language,
+      source_code: code,
+      stdin_input: stdin,
+      verdict: 'internal_error',
+      runtime_ms: 0,
+      memory_kb: 0,
+      stdout_output: errorMsg,
+      stderr_output: errorMsg,
+      compile_output: null,
+      test_cases_passed: 0,
+      total_test_cases: testCases?.length || 1,
+      is_custom_run: isCustomRun,
+      created_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+    };
 
-      const completedSub: Submission = {
-        ...runningSub,
-        verdict,
-        runtime_ms: runtimeMs,
-        memory_kb: memoryKb,
-        stdout_output: stdout || null,
-        stderr_output: stderr || null,
-        compile_output: compileOutput || null,
-        test_cases_passed: passedCases,
-        total_test_cases: totalCases,
-        completed_at: new Date().toISOString(),
-      };
-
-      notifyMockListeners(completedSub);
-    }, execDelay);
-  }, 250);
+    updateSubmissionState(failedSub);
+    return failedSub;
+  }
 }
 
 /**
@@ -122,37 +139,10 @@ export async function runCode(
 ): Promise<{ submissionId: string; submission?: Submission }> {
   const submissionId = crypto.randomUUID();
 
-  if (isSupabaseConfigured()) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('submissions')
-          .insert({
-            user_id: user.id,
-            problem_id: null,
-            language,
-            source_code: code,
-            stdin_input: stdin,
-            is_custom_run: true,
-            verdict: 'pending',
-          })
-          .select()
-          .single();
-
-        if (!error && data) {
-          return { submissionId: data.id, submission: data };
-        }
-      }
-    } catch (err) {
-      console.warn('Supabase runCode error, falling back to mock sandbox:', err);
-    }
-  }
-
-  // Standalone / Guest / Mock mode
+  // Set initial 'pending' state
   const initialSub: Submission = {
     id: submissionId,
-    user_id: 'guest-user-0000',
+    user_id: 'anonymous',
     problem_id: null,
     language,
     source_code: code,
@@ -166,14 +156,51 @@ export async function runCode(
     created_at: new Date().toISOString(),
   };
 
-  mockSubmissions.set(submissionId, initialSub);
-  simulateJudgeExecution(submissionId, null, code, language, stdin, true);
+  updateSubmissionState(initialSub);
 
-  return { submissionId, submission: initialSub };
+  // Transition to 'running'
+  setTimeout(() => {
+    updateSubmissionState({
+      ...initialSub,
+      verdict: 'running',
+    });
+  }, 100);
+
+  // If user is authenticated with Supabase, record in public.submissions
+  if (isSupabaseConfigured()) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('submissions').insert({
+          id: submissionId,
+          user_id: user.id,
+          problem_id: null,
+          language,
+          source_code: code,
+          stdin_input: stdin,
+          is_custom_run: true,
+          verdict: 'pending',
+        });
+      }
+    } catch {
+      // Non-blocking: continue execution via judge worker
+    }
+  }
+
+  // Execute directly with real compiler worker
+  const completedSub = await executeViaJudgeWorker(
+    submissionId,
+    language,
+    code,
+    stdin,
+    true
+  );
+
+  return { submissionId, submission: completedSub };
 }
 
 /**
- * Submits an official problem solution to the remote judge worker.
+ * Submits an official problem solution to the isolated judge worker.
  */
 export async function submitSolution(
   problemId: string,
@@ -182,36 +209,27 @@ export async function submitSolution(
 ): Promise<{ submissionId: string; submission?: Submission }> {
   const submissionId = crypto.randomUUID();
 
+  // Fetch real test cases from Supabase if available
+  let testCases: Array<{ input: string; expected_output?: string; is_sample?: boolean }> = [];
   if (isSupabaseConfigured()) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('submissions')
-          .insert({
-            user_id: user.id,
-            problem_id: problemId,
-            language,
-            source_code: code,
-            is_custom_run: false,
-            verdict: 'pending',
-          })
-          .select()
-          .single();
+      const { data } = await supabase
+        .from('test_cases')
+        .select('input, expected_output, is_sample')
+        .eq('problem_id', problemId)
+        .order('order_index', { ascending: true });
 
-        if (!error && data) {
-          return { submissionId: data.id, submission: data };
-        }
+      if (data && data.length > 0) {
+        testCases = data;
       }
-    } catch (err) {
-      console.warn('Supabase submitSolution error, falling back to mock sandbox:', err);
+    } catch {
+      // Fallback
     }
   }
 
-  // Standalone / Guest / Mock mode
   const initialSub: Submission = {
     id: submissionId,
-    user_id: 'guest-user-0000',
+    user_id: 'anonymous',
     problem_id: problemId,
     language,
     source_code: code,
@@ -219,21 +237,60 @@ export async function submitSolution(
     runtime_ms: 0,
     memory_kb: 0,
     test_cases_passed: 0,
-    total_test_cases: 24,
+    total_test_cases: testCases.length || 1,
     is_custom_run: false,
     created_at: new Date().toISOString(),
   };
 
-  mockSubmissions.set(submissionId, initialSub);
-  simulateJudgeExecution(submissionId, problemId, code, language, '', false);
+  updateSubmissionState(initialSub);
 
-  return { submissionId, submission: initialSub };
+  setTimeout(() => {
+    updateSubmissionState({
+      ...initialSub,
+      verdict: 'running',
+    });
+  }, 100);
+
+  // If user is authenticated with Supabase, record submission row
+  if (isSupabaseConfigured()) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('submissions').insert({
+          id: submissionId,
+          user_id: user.id,
+          problem_id: problemId,
+          language,
+          source_code: code,
+          is_custom_run: false,
+          verdict: 'pending',
+        });
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  // Execute against all test cases with real compiler
+  const completedSub = await executeViaJudgeWorker(
+    submissionId,
+    language,
+    code,
+    '',
+    false,
+    testCases.length > 0 ? testCases : undefined
+  );
+
+  return { submissionId, submission: completedSub };
 }
 
 /**
  * Fetches submission details by ID.
  */
 export async function getSubmission(submissionId: string): Promise<Submission | null> {
+  const local = activeSubmissions.get(submissionId);
+  if (local) return local;
+
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase
@@ -245,10 +302,10 @@ export async function getSubmission(submissionId: string): Promise<Submission | 
       if (!error && data) {
         return data as Submission;
       }
-    } catch (err) {
-      console.warn('Failed to fetch submission from Supabase:', err);
+    } catch {
+      // Silently fall back
     }
   }
 
-  return mockSubmissions.get(submissionId) || null;
+  return null;
 }

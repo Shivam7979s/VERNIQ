@@ -1,81 +1,19 @@
 -- ==============================================================================
--- VERNIQ Phase 1 Database Migration: User Profiles Schema, RLS, and Auth Trigger
--- Migration: 20261001000001_create_user_profiles.sql
+-- VERNIQ Hotfix: Fix citext resolution and robust auth user provisioning trigger
+-- Migration: 20261001000005_fix_citext_and_auth_trigger.sql
+--
+-- RUN THIS IN YOUR SUPABASE SQL EDITOR:
+-- https://supabase.com/dashboard/project/cisddayhekkktcomnqhz/sql/new
 -- ==============================================================================
 
--- 1. Create Profiles Table Linked to auth.users
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username CITEXT UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-  avatar_url TEXT,
-  role public.app_role NOT NULL DEFAULT 'student',
-  bio TEXT,
-  github_username TEXT,
-  linkedin_url TEXT,
-  current_streak INTEGER NOT NULL DEFAULT 0 CHECK (current_streak >= 0),
-  max_streak INTEGER NOT NULL DEFAULT 0 CHECK (max_streak >= 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT username_format_check CHECK (username ~ '^[a-zA-Z0-9_]{3,20}$')
-);
+-- 1. Ensure citext extension is enabled (in schema extensions or public)
+CREATE EXTENSION IF NOT EXISTS "citext" WITH SCHEMA extensions;
 
--- 2. Performance Indexes
-CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
-CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
-
--- 3. Automatic updated_at Trigger
-DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
-CREATE TRIGGER set_profiles_updated_at
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- 4. Enforce Role Immutability: Standard users cannot elevate their own role
-CREATE OR REPLACE FUNCTION public.prevent_profile_role_update()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.role IS DISTINCT FROM OLD.role THEN
-    IF auth.role() <> 'service_role' AND (
-      SELECT role FROM public.profiles WHERE id = auth.uid()
-    ) <> 'admin' THEN
-      RAISE EXCEPTION 'Modifying profile role is prohibited';
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, auth;
-
-DROP TRIGGER IF EXISTS enforce_profile_role_immutability ON public.profiles;
-CREATE TRIGGER enforce_profile_role_immutability
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.prevent_profile_role_update();
-
--- 5. Row Level Security (RLS) Configuration
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- 5.1 Public Read: Any authenticated or unauthenticated client can read profiles
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
-CREATE POLICY "Public profiles are viewable by everyone"
-  ON public.profiles
-  FOR SELECT
-  USING (true);
-
--- 5.2 Insert: Users can only create their own profile row matching auth.uid()
-DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
-CREATE POLICY "Users can insert their own profile"
-  ON public.profiles
-  FOR INSERT
-  WITH CHECK (auth.uid() = id);
-
--- 5.3 Update: Users can update only their own profile
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile"
-  ON public.profiles
-  FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
--- 6. Trigger to automatically provision public.profiles upon auth.users signup
+-- 2. Drop and recreate handle_new_user with:
+--    a) TEXT variable types instead of CITEXT (eliminates SQLSTATE 42704)
+--    b) Explicit search_path = public, extensions, auth
+--    c) Robust college_id resolution (handles UUIDs, slugs, or names)
+--    d) Safe ON CONFLICT DO UPDATE
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -177,7 +115,72 @@ BEGIN
 END;
 $$;
 
+-- 3. Re-attach trigger on auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 4. Secure all other SECURITY DEFINER functions with explicit search_path
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
+
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    IF auth.role() <> 'service_role' AND (
+      SELECT role FROM public.profiles WHERE id = auth.uid()
+    ) <> 'admin' THEN
+      RAISE EXCEPTION 'Modifying profile role is prohibited';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, auth;
+
+CREATE OR REPLACE FUNCTION public.sync_college_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'UPDATE') THEN
+    IF (OLD.college_id IS DISTINCT FROM NEW.college_id) THEN
+      IF OLD.college_id IS NOT NULL THEN
+        UPDATE public.colleges
+        SET student_count = GREATEST(student_count - 1, 0),
+            total_score = GREATEST(total_score - OLD.score, 0)
+        WHERE id = OLD.college_id;
+      END IF;
+      IF NEW.college_id IS NOT NULL THEN
+        UPDATE public.colleges
+        SET student_count = student_count + 1,
+            total_score = total_score + NEW.score
+        WHERE id = NEW.college_id;
+      END IF;
+    ELSIF (OLD.score IS DISTINCT FROM NEW.score AND NEW.college_id IS NOT NULL) THEN
+      UPDATE public.colleges
+      SET total_score = total_score + (NEW.score - OLD.score)
+      WHERE id = NEW.college_id;
+    END IF;
+  ELSIF (TG_OP = 'INSERT') THEN
+    IF NEW.college_id IS NOT NULL THEN
+      UPDATE public.colleges
+      SET student_count = student_count + 1,
+          total_score = total_score + NEW.score
+      WHERE id = NEW.college_id;
+    END IF;
+  ELSIF (TG_OP = 'DELETE') THEN
+    IF OLD.college_id IS NOT NULL THEN
+      UPDATE public.colleges
+      SET student_count = GREATEST(student_count - 1, 0),
+          total_score = GREATEST(total_score - OLD.score, 0)
+      WHERE id = OLD.college_id;
+    END IF;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;

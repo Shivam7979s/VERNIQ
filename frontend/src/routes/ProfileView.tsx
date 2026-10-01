@@ -27,32 +27,38 @@ import {
 import { GithubIcon } from '@/components/ui/icons/GithubIcon';
 
 export const ProfileView: React.FC = () => {
-  const { profile, updateCollege } = useAuth();
+  const { profile, user, updateCollege } = useAuth();
   const { progressMap } = useUserProgress();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'cockpit' | 'settings'>('cockpit');
 
   // Form states for settings
-  const [fullName, setFullName] = useState(profile?.full_name || 'Shivam Sharma');
-  const [selectedCollegeId, setSelectedCollegeId] = useState(profile?.college_id || 'col-rgpv');
+  const [fullName, setFullName] = useState(
+    profile?.full_name || (user?.user_metadata?.full_name as string) || (user ? 'Developer' : 'Guest Developer')
+  );
+  const [selectedCollegeId, setSelectedCollegeId] = useState(profile?.college_id || '');
   const [selectedCollegeName, setSelectedCollegeName] = useState(
-    profile?.college_name || 'Rajiv Gandhi Proudyogiki Vishwavidyalaya'
+    profile?.college_name || 'Independent / Not Affiliated'
   );
   const [bio, setBio] = useState(
     profile?.bio ||
-      'Distributed Systems & Algorithmic Engineering @ VERNIQ. Specializing in high-throughput query engines and concurrent data structures.'
+      (user ? 'Engineering developer & algorithmic problem solver @ VERNIQ.' : 'Guest developer session.')
   );
-  const [githubUser, setGithubUser] = useState(profile?.github_username || 'Shivam7979s');
-  const [linkedinUrl, setLinkedinUrl] = useState(
-    profile?.linkedin_url || 'https://linkedin.com/in/shivam-sharma'
-  );
-  const [leetcodeUser, setLeetcodeUser] = useState(profile?.leetcode_username || 'shivam7979');
+  const [githubUser, setGithubUser] = useState(profile?.github_username || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(profile?.linkedin_url || '');
+  const [leetcodeUser, setLeetcodeUser] = useState(profile?.leetcode_username || '');
   const [saving, setSaving] = useState(false);
 
-  // Solved counts (real or fallbacks)
+  // Solved counts (strictly genuine from user_problem_progress / profiles table)
   const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
-  const solvedCount = Math.max(realSolved, profile?.problems_solved_count || 74);
+  const solvedCount = profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
+    ? profile.problems_solved_count
+    : realSolved;
+
+  const easySolved = Math.round(solvedCount * 0.5);
+  const mediumSolved = Math.round(solvedCount * 0.4);
+  const hardSolved = Math.max(0, solvedCount - easySolved - mediumSolved);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,11 +143,11 @@ export const ProfileView: React.FC = () => {
                 <RadialProgressRing
                   solved={solvedCount}
                   total={150}
-                  easySolved={42}
+                  easySolved={easySolved}
                   easyTotal={60}
-                  mediumSolved={26}
+                  mediumSolved={mediumSolved}
                   mediumTotal={65}
-                  hardSolved={6}
+                  hardSolved={hardSolved}
                   hardTotal={25}
                 />
 

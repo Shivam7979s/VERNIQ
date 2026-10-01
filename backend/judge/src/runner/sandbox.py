@@ -1,7 +1,9 @@
 """Isolated execution sandbox runner for untrusted code."""
 import os
+import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from typing import List, Optional
@@ -52,15 +54,29 @@ class SandboxRunner:
 
         # Ephemeral scratch directory - wiped immediately after execution
         with tempfile.TemporaryDirectory(prefix="verniq_sandbox_") as scratch_dir:
-            source_file_path = os.path.join(scratch_dir, profile.source_filename)
+            source_filename = profile.source_filename
+            compile_cmd = list(profile.compile_cmd) if profile.compile_cmd else None
+            run_cmd = list(profile.run_cmd)
+
+            # Auto-detect Java class name and ensure classpath includes current directory
+            if profile.name == "java":
+                match = re.search(r"public\s+class\s+([A-Za-z0-9_]+)", source_code)
+                if not match:
+                    match = re.search(r"class\s+([A-Za-z0-9_]+)", source_code)
+                class_name = match.group(1) if match else "Main"
+                source_filename = f"{class_name}.java"
+                compile_cmd = ["javac", source_filename]
+                run_cmd = ["java", "-Xmx256m", "-Xss64m", "-cp", ".", class_name]
+
+            source_file_path = os.path.join(scratch_dir, source_filename)
             with open(source_file_path, "w", encoding="utf-8") as f:
                 f.write(source_code)
 
             # 1. Compilation Phase (if required by language profile)
-            if profile.compile_cmd:
+            if compile_cmd:
                 try:
                     compile_proc = subprocess.run(
-                        profile.compile_cmd,
+                        compile_cmd,
                         cwd=scratch_dir,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -102,6 +118,13 @@ class SandboxRunner:
             last_stdout = ""
             last_stderr = ""
 
+            # If binary was compiled into scratch_dir, ensure exact path is used
+            exec_binary = os.path.join(scratch_dir, run_cmd[0])
+            if os.path.exists(exec_binary):
+                run_cmd[0] = exec_binary
+            elif sys.platform == "win32" and os.path.exists(exec_binary + ".exe"):
+                run_cmd[0] = exec_binary + ".exe"
+
             effective_timeout = self.time_limit_seconds * profile.time_limit_multiplier
 
             for index, tc in enumerate(test_cases):
@@ -109,7 +132,7 @@ class SandboxRunner:
                 
                 try:
                     proc = subprocess.Popen(
-                        profile.run_cmd,
+                        run_cmd,
                         cwd=scratch_dir,
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,

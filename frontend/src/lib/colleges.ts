@@ -2,7 +2,7 @@ import type { College } from '@/types';
 
 export const SEEDED_COLLEGES: College[] = [
   {
-    id: 'col-iitb',
+    id: '187ea122-3e85-443a-8f01-b774389852a0',
     name: 'Indian Institute of Technology Bombay',
     slug: 'iit-bombay',
     state: 'Maharashtra',
@@ -11,7 +11,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 14250,
   },
   {
-    id: 'col-iitd',
+    id: 'f6a22277-8cd5-47a3-ae1c-5b9199ea4e73',
     name: 'Indian Institute of Technology Delhi',
     slug: 'iit-delhi',
     state: 'Delhi',
@@ -20,7 +20,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 13800,
   },
   {
-    id: 'col-iitm',
+    id: 'da80da44-91c2-4662-8153-dfe7c5ec439a',
     name: 'Indian Institute of Technology Madras',
     slug: 'iit-madras',
     state: 'Tamil Nadu',
@@ -29,7 +29,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 12900,
   },
   {
-    id: 'col-iitk',
+    id: 'b778ed97-dcff-4f38-87d6-607463a16073',
     name: 'Indian Institute of Technology Kanpur',
     slug: 'iit-kanpur',
     state: 'Uttar Pradesh',
@@ -38,7 +38,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 11400,
   },
   {
-    id: 'col-iitkgp',
+    id: '71814da3-68f8-4301-9534-670e0a6bdf26',
     name: 'Indian Institute of Technology Kharagpur',
     slug: 'iit-kharagpur',
     state: 'West Bengal',
@@ -47,7 +47,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 10850,
   },
   {
-    id: 'col-iitr',
+    id: 'fbf6bc22-4187-4c28-a6df-965a5b4ad2f9',
     name: 'Indian Institute of Technology Roorkee',
     slug: 'iit-roorkee',
     state: 'Uttarakhand',
@@ -56,7 +56,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 9600,
   },
   {
-    id: 'col-bits',
+    id: '2de58c0a-acd4-43c4-9584-527fb582954a',
     name: 'Birla Institute of Technology and Science, Pilani',
     slug: 'bits-pilani',
     state: 'Rajasthan',
@@ -65,7 +65,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 11950,
   },
   {
-    id: 'col-nitt',
+    id: 'bad8fd31-f64a-4233-ab89-851ea0dd321f',
     name: 'National Institute of Technology Tiruchirappalli',
     slug: 'nit-trichy',
     state: 'Tamil Nadu',
@@ -74,7 +74,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 8900,
   },
   {
-    id: 'col-nitk',
+    id: 'bb33407e-a577-4589-aede-87150419baff',
     name: 'National Institute of Technology Karnataka, Surathkal',
     slug: 'nit-surathkal',
     state: 'Karnataka',
@@ -83,7 +83,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 8450,
   },
   {
-    id: 'col-nitw',
+    id: '346f9aea-b17d-4086-9ec6-49873773998a',
     name: 'National Institute of Technology Warangal',
     slug: 'nit-warangal',
     state: 'Telangana',
@@ -92,7 +92,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 7800,
   },
   {
-    id: 'col-iiith',
+    id: '106a77d9-20db-49f2-b58c-d4e911c36cc3',
     name: 'International Institute of Information Technology, Hyderabad',
     slug: 'iiit-hyderabad',
     state: 'Telangana',
@@ -101,7 +101,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 13200,
   },
   {
-    id: 'col-iiitb',
+    id: 'a2db6bc4-24f8-467e-8357-a81c95896667',
     name: 'International Institute of Information Technology, Bangalore',
     slug: 'iiit-bangalore',
     state: 'Karnataka',
@@ -110,7 +110,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 7500,
   },
   {
-    id: 'col-dtu',
+    id: '5237947c-74ff-4238-ad92-a0774afa50b0',
     name: 'Delhi Technological University',
     slug: 'dtu-delhi',
     state: 'Delhi',
@@ -119,7 +119,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 9200,
   },
   {
-    id: 'col-nsut',
+    id: 'f4841c97-3926-4f30-95de-462057b8b314',
     name: 'Netaji Subhas University of Technology',
     slug: 'nsut-delhi',
     state: 'Delhi',
@@ -128,7 +128,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 7900,
   },
   {
-    id: 'col-vit',
+    id: 'c4716686-2afc-4db3-8db6-7677c8f19b05',
     name: 'Vellore Institute of Technology, Vellore',
     slug: 'vit-vellore',
     state: 'Tamil Nadu',
@@ -137,7 +137,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 10400,
   },
   {
-    id: 'col-ju',
+    id: '67afb5a0-ab37-4c23-9327-16f37785e894',
     name: 'Jadavpur University',
     slug: 'jadavpur-university',
     state: 'West Bengal',
@@ -146,7 +146,7 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 7100,
   },
   {
-    id: 'col-rgpv',
+    id: '31e06615-0bbc-467a-95c0-295d9b29769f',
     name: 'Rajiv Gandhi Proudyogiki Vishwavidyalaya, Bhopal',
     slug: 'rgpv-bhopal',
     state: 'Madhya Pradesh',
@@ -155,12 +155,30 @@ export const SEEDED_COLLEGES: College[] = [
     total_score: 8150,
   },
   {
-    id: 'col-coep',
+    id: 'c12fa31e-40a4-462b-9086-b003a4489206',
     name: 'College of Engineering, Pune',
     slug: 'coep-pune',
     state: 'Maharashtra',
     country: 'India',
     student_count: 17,
     total_score: 6950,
+  },
+  {
+    id: 'a4287442-122a-4ebe-a02e-330414dc6a00',
+    name: 'PSG College of Technology',
+    slug: 'psg-tech',
+    state: 'Tamil Nadu',
+    country: 'India',
+    student_count: 16,
+    total_score: 6400,
+  },
+  {
+    id: '7f1a845a-e71c-4ec1-8182-1032a1773537',
+    name: 'Thapar Institute of Engineering and Technology',
+    slug: 'thapar-patiala',
+    state: 'Punjab',
+    country: 'India',
+    student_count: 19,
+    total_score: 7250,
   },
 ];
