@@ -16,6 +16,8 @@ import { LoginView } from '@/routes/LoginView';
 import { RegisterView } from '@/routes/RegisterView';
 import { ForgotPasswordView } from '@/routes/ForgotPasswordView';
 import { DashboardView } from '@/routes/DashboardView';
+import { DiagnosticView } from '@/routes/DiagnosticView';
+import { SprintPlanView } from '@/routes/SprintPlanView';
 import { StudyPlanView } from '@/routes/StudyPlanView';
 import { RevisionView } from '@/routes/RevisionView';
 import { WorkspaceSubView } from '@/routes/WorkspaceSubView';
@@ -149,7 +151,15 @@ export const App: React.FC = () => {
             path="/plan"
             element={
               <ProtectedRoute>
-                <Navigate to="/app/study-plan" replace />
+                <Navigate to="/app/plan" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/diagnostic"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/diagnostic" replace />
               </ProtectedRoute>
             }
           />
@@ -234,10 +244,26 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/app/diagnostic"
+            element={
+              <ProtectedRoute>
+                <DiagnosticView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/app/plan"
             element={
               <ProtectedRoute>
-                <StudyPlanView />
+                <SprintPlanView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/sprint-plan"
+            element={
+              <ProtectedRoute>
+                <SprintPlanView />
               </ProtectedRoute>
             }
           />

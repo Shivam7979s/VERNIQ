@@ -16,6 +16,7 @@ import {
   FolderGit2,
   LogOut,
   User,
+  Brain,
 } from 'lucide-react';
 import { IconButton } from '../actions/IconButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -98,9 +99,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               collapsed={collapsed}
             />
             <NavItem
-              to="/app/study-plan"
+              to="/app/plan"
               icon={<CalendarCheck2 />}
-              label="Study Plan"
+              label="Sprint Horizon"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/app/diagnostic"
+              icon={<Brain />}
+              label="Diagnostic Engine"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/app/study-plan"
+              icon={<BookOpen />}
+              label="Career Planner"
               collapsed={collapsed}
             />
           </div>

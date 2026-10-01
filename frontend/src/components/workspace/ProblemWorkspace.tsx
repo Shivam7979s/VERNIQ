@@ -26,6 +26,7 @@ import {
 import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 
 import { runCode, submitSolution } from '@/lib/submissionService';
+import { syncAcceptedSubmissionToSprintAndDiagnostics } from '@/lib/telemetryFeedback';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
 import { ProgrammingLanguage, Submission } from '@/types';
 
@@ -43,7 +44,7 @@ export const ProblemWorkspace: React.FC = () => {
 
   const { problem, testCases: sampleTestCases, loading } = useProblemBySlug(activeSlug);
   const { progressMap, revisionMap, updateProgress, toggleRevision } = useUserProgress();
-  const { preferredLanguage, updatePreferredLanguage } = useAuth();
+  const { user, preferredLanguage, updatePreferredLanguage } = useAuth();
 
   const [language, setLanguage] = useState<string>(preferredLanguage || 'java');
 
@@ -84,9 +85,12 @@ export const ProblemWorkspace: React.FC = () => {
       if (liveSubmission.test_cases_passed !== undefined) setTestCasesPassed(liveSubmission.test_cases_passed);
       if (liveSubmission.total_test_cases !== undefined) setTotalTestCases(liveSubmission.total_test_cases);
 
-      // On official accepted submission, notify user progress
+      // On official accepted submission, notify user progress and mutate sprint tasks + diagnostics
       if (liveSubmission.verdict === 'accepted' && !liveSubmission.is_custom_run && problem) {
         updateProgress(problem.id, 'solved');
+        if (user) {
+          syncAcceptedSubmissionToSprintAndDiagnostics(user.id, problem.id, problem.difficulty);
+        }
       }
 
       // Record to history if terminal verdict reached

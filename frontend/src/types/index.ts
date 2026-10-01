@@ -274,4 +274,58 @@ export interface RevisionCard {
   };
 }
 
+export type ConfidenceLevel = 'novice' | 'intermediate' | 'proficient' | 'master';
+
+export interface UserDiagnostic {
+  id: string;
+  user_id: string;
+  tag_id?: string | null;
+  tag_name: string;
+  mastery_score: number;
+  confidence_level: ConfidenceLevel;
+  evaluated_at: string;
+}
+
+export interface StudySprint {
+  id: string;
+  user_id: string;
+  sprint_number: number;
+  title: string;
+  primary_tag_id?: string | null;
+  primary_topic: string;
+  target_hours: number;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'completed' | 'archived';
+  created_at: string;
+}
+
+export type SprintTaskType =
+  | 'learn_concept'
+  | 'practice_problem'
+  | 'spaced_revision'
+  | 'mistake_retrial'
+  | 'sprint_assessment';
+
+export interface SprintTask {
+  id: string;
+  sprint_id: string;
+  user_id: string;
+  problem_id?: string | null;
+  task_type: SprintTaskType;
+  title: string;
+  estimated_minutes: number;
+  scheduled_date: string;
+  is_completed: boolean;
+  completed_at?: string | null;
+  order_index: number;
+  problem?: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: DifficultyLevel;
+    tags?: string[];
+  };
+}
+
 
