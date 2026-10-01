@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/actions/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { supabase } from '@/lib/supabaseClient';
 import {
   Play,
   RotateCcw,
@@ -23,6 +25,7 @@ import {
   Terminal,
   Loader2,
   AlertTriangle,
+  Bookmark,
 } from 'lucide-react';
 import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 import { runCode } from '@/lib/submissionService';
@@ -133,7 +136,8 @@ func main() {
 
 export const StandaloneIdeView: React.FC = () => {
   const { toast } = useToast();
-  const { preferredLanguage, updatePreferredLanguage } = useAuth();
+  const { user, preferredLanguage, updatePreferredLanguage } = useAuth();
+  const location = useLocation();
 
   // Tab State
   const [tabs, setTabs] = useState<ScratchTab[]>([
@@ -153,6 +157,38 @@ export const StandaloneIdeView: React.FC = () => {
     },
   ]);
   const [activeTabId, setActiveTabId] = useState<string>('tab-1');
+
+  // Handle incoming codespace snippet from route navigation
+  useEffect(() => {
+    const stateData = location.state as {
+      code?: string;
+      language?: string;
+      title?: string;
+      stdin?: string;
+      codespaceId?: string;
+    } | null;
+
+    if (stateData && stateData.code !== undefined) {
+      const lang = stateData.language || 'java';
+      const title = stateData.title || 'Code 1';
+      setTabs((prev) => [
+        {
+          id: 'tab-codespace',
+          title,
+          language: lang,
+          code: stateData.code || '',
+          stdin: stateData.stdin || '',
+        },
+        ...prev.filter((t) => t.id !== 'tab-codespace'),
+      ]);
+      setActiveTabId('tab-codespace');
+      toast({
+        type: 'info',
+        title: 'CodeSpace Loaded',
+        message: `Opened "${title}" from your cloud vault.`,
+      });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (preferredLanguage) {
@@ -422,6 +458,41 @@ export const StandaloneIdeView: React.FC = () => {
     });
   };
 
+  // Save active scratchpad to CodeSpace Vault
+  const handleSaveToVault = async () => {
+    if (!user) {
+      toast({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Sign in to commit scratchpads to your cloud CodeSpace vault.',
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase.from('user_codespaces').insert({
+        user_id: user.id,
+        title: activeTab.title,
+        language: activeTab.language,
+        code_buffer: activeTab.code,
+        stdin_buffer: activeTab.stdin || null,
+        tags: ['scratchpad'],
+      });
+      if (error) throw error;
+      toast({
+        type: 'success',
+        title: 'Saved to CodeSpace',
+        message: `"${activeTab.title}" committed to your personal vault.`,
+      });
+    } catch (err) {
+      console.error('Failed to save to vault:', err);
+      toast({
+        type: 'error',
+        title: 'Save Failed',
+        message: 'Could not commit scratchpad to database.',
+      });
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -515,6 +586,15 @@ export const StandaloneIdeView: React.FC = () => {
             title="Copy code"
           >
             {copiedCode ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+          </button>
+
+          {/* Save to CodeSpace Vault */}
+          <button
+            onClick={handleSaveToVault}
+            className="p-1.5 rounded-md text-neutral-400 hover:text-blue-400 hover:bg-white/[0.04] transition-colors"
+            title="Commit to CodeSpace Vault"
+          >
+            <Bookmark className="w-4 h-4" />
           </button>
 
           {/* Fullscreen Toggle */}

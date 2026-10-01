@@ -1,549 +1,577 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/ui/layout/DashboardLayout';
-import { RadialProgressRing } from '@/components/profile/RadialProgressRing';
+import { ActiveSprintBanner } from '@/components/dashboard/ActiveSprintBanner';
+import { ProblemOfTheDayCard } from '@/components/dashboard/ProblemOfTheDayCard';
+import { CategoryProgressModule } from '@/components/dashboard/CategoryProgressModule';
 import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { Button } from '@/components/ui/actions/Button';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserProgress } from '@/hooks/useUserProgress';
 import { useUserTelemetry } from '@/hooks/useUserTelemetry';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { FALLBACK_PROBLEMS } from '@/lib/curriculumData';
+import type { StudySprint, SprintTask, RevisionCard } from '@/types';
 import {
   Flame,
   Trophy,
-  CheckCircle2,
-  Clock,
-  Circle,
-  Code2,
-  ArrowRight,
-  BookOpen,
-  Building2,
+  Repeat,
+  Sparkles,
+  ShieldCheck,
+  CalendarCheck,
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface TargetProblem {
-  id: string;
-  slug: string;
-  title: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  estimatedMinutes: number;
-  tags: string[];
-}
-
-interface RealCampusPeer {
-  rank: number;
-  id: string;
-  name: string;
-  username: string;
-  solved: number;
-  score: number;
-  isCurrentUser: boolean;
-}
-
 export const DashboardView: React.FC = () => {
   const { profile, user } = useAuth();
-  const { progressMap, updateProgress } = useUserProgress();
   const telemetry = useUserTelemetry();
 
-  const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || (user ? 'Developer' : 'Guest Developer');
-  const collegeName = profile?.college_name || (profile?.college_id ? 'Affiliated College' : 'Independent');
-  const streak = telemetry.currentStreak > 0 ? telemetry.currentStreak : profile?.current_streak || 0;
-  const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : '1';
+  // Active Sprint & Tasks
+  const [activeSprint, setActiveSprint] = useState<StudySprint | null>(null);
+  const [sprintTasks, setSprintTasks] = useState<SprintTask[]>([]);
+  const [todaySprintTasks, setTodaySprintTasks] = useState<SprintTask[]>([]);
+  const [revisionDueItems, setRevisionDueItems] = useState<RevisionCard[]>([]);
 
-  // Real solved count
-  const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
-  const solvedCount = telemetry.solvedCount > 0
-    ? telemetry.solvedCount
-    : profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
-    ? profile.problems_solved_count
-    : realSolved;
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  const easySolved = Math.round(solvedCount * 0.5);
-  const mediumSolved = Math.round(solvedCount * 0.4);
-  const hardSolved = Math.max(0, solvedCount - easySolved - mediumSolved);
+  const displayName =
+    profile?.full_name ||
+    (user?.user_metadata?.full_name as string) ||
+    (user ? 'Developer' : 'Guest Developer');
 
-  // 1. Dynamic unsolved targets
-  const [targetProblems, setTargetProblems] = useState<TargetProblem[]>([]);
-  const [activeContinueProblem, setActiveContinueProblem] = useState<TargetProblem>({
-    id: '00000000-0000-0000-0000-000000000304',
-    slug: 'search-in-rotated-sorted-array',
-    title: 'Search in Rotated Sorted Array',
-    difficulty: 'medium',
-    estimatedMinutes: 25,
-    tags: ['Binary Search', 'Arrays'],
-  });
+  const collegeName =
+    profile?.college_name ||
+    (profile?.college_id ? 'Affiliated University' : 'Independent');
 
-  useEffect(() => {
-    let isMounted = true;
+  const streak =
+    telemetry.currentStreak > 0
+      ? telemetry.currentStreak
+      : profile?.current_streak || 0;
 
-    async function fetchTargets() {
-      const solvedSet = new Set(telemetry.solvedProblemIds);
-      Object.entries(progressMap).forEach(([id, status]) => {
-        if (status === 'solved') solvedSet.add(id);
-      });
+  const campusRank = profile?.score
+    ? Math.max(1, 100 - Math.floor(profile.score / 50))
+    : '1';
 
-      try {
-        if (isSupabaseConfigured()) {
-          const { data, error } = await supabase
-            .from('problems')
-            .select('id, title, slug, difficulty, problem_tags(tags(name))')
-            .eq('is_published', true);
+  // Dynamic Command Greeting
+  const commandGreeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return `Up early, ${displayName}?`;
+    if (hour < 17) return `Focused afternoon, ${displayName}?`;
+    return `Late engineering sprint, ${displayName}?`;
+  }, [displayName]);
 
-          if (!error && data && data.length > 0 && isMounted) {
-            const allMapped: TargetProblem[] = data.map((p: any) => {
-              const tags = (p.problem_tags || []).map((pt: any) => pt.tags?.name).filter(Boolean);
-              return {
-                id: p.id,
-                slug: p.slug,
-                title: p.title,
-                difficulty: p.difficulty,
-                estimatedMinutes: p.difficulty === 'hard' ? 40 : p.difficulty === 'medium' ? 25 : 15,
-                tags: tags.length > 0 ? tags : ['Algorithms'],
-              };
-            });
-
-            // Find unsolved problems
-            const unsolved = allMapped.filter((p) => !solvedSet.has(p.id));
-            if (unsolved.length > 0) {
-              setTargetProblems(unsolved.slice(0, 3));
-              setActiveContinueProblem(unsolved[0]);
-            } else {
-              setTargetProblems(allMapped.slice(0, 3));
-              setActiveContinueProblem(allMapped[0]);
-            }
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load targets from Supabase:', err);
-      }
-
-      // Fallback
-      if (isMounted) {
-        const unsolvedFallback = FALLBACK_PROBLEMS.filter((p) => !solvedSet.has(p.id)).map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          difficulty: p.difficulty,
-          estimatedMinutes: p.difficulty === 'hard' ? 40 : p.difficulty === 'medium' ? 25 : 15,
-          tags: p.tags || ['Arrays'],
-        }));
-        if (unsolvedFallback.length > 0) {
-          setTargetProblems(unsolvedFallback.slice(0, 3));
-          setActiveContinueProblem(unsolvedFallback[0]);
-        } else {
-          const allFb = FALLBACK_PROBLEMS.map((p) => ({
-            id: p.id,
-            slug: p.slug,
-            title: p.title,
-            difficulty: p.difficulty,
-            estimatedMinutes: 20,
-            tags: p.tags || ['Arrays'],
-          }));
-          setTargetProblems(allFb.slice(0, 3));
-          setActiveContinueProblem(allFb[0]);
-        }
-      }
+  // Fetch active sprint and today's tasks
+  const fetchDashboardData = useCallback(async () => {
+    if (!user || !isSupabaseConfigured()) {
+      return;
     }
 
-    fetchTargets();
+    try {
+      // 1. Fetch active sprint
+      const { data: sData } = await supabase
+        .from('study_sprints')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [telemetry.solvedProblemIds, progressMap]);
+      if (sData) {
+        setActiveSprint(sData as StudySprint);
 
-  // 2. Real Campus Standing Peers query from Supabase
-  const [campusPeers, setCampusPeers] = useState<RealCampusPeer[]>([]);
+        // Fetch all sprint tasks
+        const { data: tData } = await supabase
+          .from('sprint_tasks')
+          .select(`
+            id,
+            sprint_id,
+            user_id,
+            problem_id,
+            task_type,
+            title,
+            estimated_minutes,
+            scheduled_date,
+            is_completed,
+            completed_at,
+            order_index,
+            problems:problem_id (
+              id,
+              title,
+              slug,
+              difficulty
+            )
+          `)
+          .eq('sprint_id', sData.id)
+          .order('scheduled_date', { ascending: true })
+          .order('order_index', { ascending: true });
+
+        if (tData) {
+          const mapped: SprintTask[] = tData.map((t: any) => {
+            const matchedFallback = FALLBACK_PROBLEMS.find((p) => p.id === t.problem_id);
+            return {
+              ...t,
+              problem: t.problems || matchedFallback,
+            };
+          });
+          setSprintTasks(mapped);
+          setTodaySprintTasks(mapped.filter((t) => t.scheduled_date === todayStr));
+        }
+      } else {
+        setActiveSprint(null);
+        setSprintTasks([]);
+        setTodaySprintTasks([]);
+      }
+
+      // 2. Fetch spaced repetition items due today
+      const { data: revData } = await supabase
+        .from('user_revision_queue')
+        .select(`
+          id,
+          user_id,
+          problem_id,
+          interval_days,
+          next_review_at,
+          is_reviewed,
+          problems:problem_id (
+            id,
+            title,
+            slug,
+            difficulty
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('is_reviewed', false)
+        .order('next_review_at', { ascending: true })
+        .limit(3);
+
+      if (revData) {
+        const revMapped: RevisionCard[] = revData.map((item: any) => {
+          const matchedFallback = FALLBACK_PROBLEMS.find((p) => p.id === item.problem_id);
+          return {
+            id: item.id,
+            user_id: item.user_id,
+            problem_id: item.problem_id,
+            interval_days: item.interval_days || 1,
+            next_review_at: item.next_review_at,
+            is_reviewed: item.is_reviewed,
+            problem: item.problems || matchedFallback,
+          };
+        });
+        setRevisionDueItems(revMapped);
+      }
+    } catch (err) {
+      console.error('[DashboardView] Error fetching telemetry:', err);
+    }
+  }, [user, todayStr]);
 
   useEffect(() => {
-    let isMounted = true;
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-    async function fetchCampusPeers() {
-      if (!isSupabaseConfigured() || !profile?.college_id) {
-        if (isMounted && profile) {
-          setCampusPeers([
-            {
-              rank: 1,
-              id: profile.id,
-              name: displayName,
-              username: profile.username || 'dev',
-              solved: solvedCount,
-              score: profile.score || 0,
-              isCurrentUser: true,
-            },
-          ]);
+  // Toggle today's task completion state
+  const handleToggleTask = async (task: SprintTask) => {
+    if (!user) return;
+    const newCompleted = !task.is_completed;
+    const completedAt = newCompleted ? new Date().toISOString() : null;
+
+    setTodaySprintTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, is_completed: newCompleted, completed_at: completedAt } : t))
+    );
+    setSprintTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, is_completed: newCompleted, completed_at: completedAt } : t))
+    );
+
+    try {
+      if (isSupabaseConfigured()) {
+        await supabase
+          .from('sprint_tasks')
+          .update({
+            is_completed: newCompleted,
+            completed_at: completedAt,
+          })
+          .eq('id', task.id);
+
+        if (newCompleted && task.problem_id) {
+          await supabase.from('user_problem_progress').upsert({
+            user_id: user.id,
+            problem_id: task.problem_id,
+            status: 'solved',
+            solved_at: new Date().toISOString(),
+          });
         }
-        return;
       }
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, username, score, problems_solved_count')
-          .eq('college_id', profile.college_id)
-          .order('score', { ascending: false })
-          .limit(5);
-
-        if (!error && data && data.length > 0 && isMounted) {
-          const peers: RealCampusPeer[] = data.map((row: any, idx: number) => ({
-            rank: idx + 1,
-            id: row.id,
-            name: row.full_name || 'Developer',
-            username: row.username || 'dev',
-            solved: row.problems_solved_count || 0,
-            score: row.score || 0,
-            isCurrentUser: row.id === user?.id || row.username === profile.username,
-          }));
-          setCampusPeers(peers);
-        } else if (isMounted) {
-          setCampusPeers([
-            {
-              rank: 1,
-              id: profile.id,
-              name: displayName,
-              username: profile.username || 'dev',
-              solved: solvedCount,
-              score: profile.score || 0,
-              isCurrentUser: true,
-            },
-          ]);
-        }
-      } catch (err) {
-        console.warn('Campus peers query failed:', err);
-      }
+    } catch (err) {
+      console.error('Failed to toggle sprint task:', err);
     }
+  };
 
-    fetchCampusPeers();
+  // Solve Counts by Difficulty
+  const solvedCount = telemetry.solvedCount;
+  const totalProblems = FALLBACK_PROBLEMS.length;
 
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.college_id, profile?.username, profile?.score, solvedCount, user?.id, displayName]);
+  const easyTotal = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'easy').length;
+  const medTotal = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'medium').length;
+  const hardTotal = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'hard').length;
 
-  // 3. Dynamic 30-Day Activity Pulse (strictly derived from telemetry submissions)
-  const today = useMemo(() => new Date(), []);
-  const recentDays = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - (29 - i));
+  const solvedSet = useMemo(() => new Set(telemetry.solvedProblemIds), [telemetry.solvedProblemIds]);
+
+  const easySolved = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'easy' && solvedSet.has(p.id)).length;
+  const medSolved = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'medium' && solvedSet.has(p.id)).length;
+  const hardSolved = FALLBACK_PROBLEMS.filter((p) => p.difficulty === 'hard' && solvedSet.has(p.id)).length;
+
+  // Topic Mastery Breakdown
+  const topicMastery = useMemo(() => {
+    return [
+      {
+        id: 'arrays',
+        name: 'Arrays & Hashing',
+        total: 2,
+        solved: FALLBACK_PROBLEMS.filter(
+          (p) => p.tags?.includes('Arrays') && solvedSet.has(p.id)
+        ).length,
+        color: '#00B8A3',
+      },
+      {
+        id: 'two-pointers',
+        name: 'Two Pointers',
+        total: 3,
+        solved: FALLBACK_PROBLEMS.filter(
+          (p) => p.tags?.includes('Two Pointers') && solvedSet.has(p.id)
+        ).length,
+        color: '#3B82F6',
+      },
+      {
+        id: 'binary-search',
+        name: 'Binary Search',
+        total: 1,
+        solved: FALLBACK_PROBLEMS.filter(
+          (p) => p.tags?.includes('Binary Search') && solvedSet.has(p.id)
+        ).length,
+        color: '#8B5CF6',
+      },
+      {
+        id: 'dynamic-programming',
+        name: 'Dynamic Programming',
+        total: 1,
+        solved: 0,
+        color: '#F59E0B',
+      },
+    ];
+  }, [solvedSet]);
+
+  // 30-Day Activity Grid
+  const activityPulseCells = useMemo(() => {
+    const cells = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      const isCompleted = (telemetry.activityMap[dateStr] || 0) > 0;
-      return {
-        day: i + 1,
+      const count = telemetry.activityMap[dateStr] || 0;
+      cells.push({
         dateStr,
-        completed: isCompleted,
-      };
-    });
-  }, [today, telemetry.activityMap]);
+        active: count > 0,
+        count,
+      });
+    }
+    return cells;
+  }, [telemetry.activityMap]);
 
-  const activeInLast30 = useMemo(() => {
-    return recentDays.filter((d) => d.completed).length;
-  }, [recentDays]);
+  const activeDaysCount = activityPulseCells.filter((c) => c.active).length;
+
+  const getTaskTypePill = (type: SprintTask['task_type']) => {
+    switch (type) {
+      case 'learn_concept':
+        return { label: 'Learn', className: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' };
+      case 'practice_problem':
+        return { label: 'Practice', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
+      case 'spaced_revision':
+        return { label: 'Revision', className: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+      case 'mistake_retrial':
+        return { label: 'Retrial', className: 'bg-rose-500/10 text-rose-400 border-rose-500/30' };
+      default:
+        return { label: 'Task', className: 'bg-surface-elevated text-neutral-400 border-white/[0.06]' };
+    }
+  };
 
   return (
     <DashboardLayout
       breadcrumbs={[
         { label: 'Student Workspace', href: '/app/dashboard' },
-        { label: 'Platform Mission Control' },
+        { label: 'Mission Control' },
       ]}
     >
-      <div className="space-y-6 max-w-7xl mx-auto text-left">
-        {/* 1. TOP COMMAND BAR: SINGLE-ROW HEADER */}
-        <div className="p-5 sm:p-6 rounded-xl border border-white/[0.08] bg-[#12151E] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-elevation-1">
-          <div className="space-y-0.5">
-            <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-[-0.025em]">
-              Welcome back, {displayName}
+      <div className="max-w-[1560px] mx-auto space-y-6 pb-12">
+        {/* TOP COMMAND GREETING & CHIPS */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-5 text-left">
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-blue-400">
+              MISSION CONTROL • STAGE ZERO
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              {commandGreeting}
             </h1>
-            <p className="text-xs text-text-secondary font-sans">
-              DSA Mastery • Step 1: Learn the Basics & Algorithmic Invariants
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Real Streak Badge */}
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#FFC01E]/30 bg-[#FFC01E]/10 text-xs font-mono text-[#FFC01E] shadow-xs">
-              <Flame className="w-4 h-4 fill-[#FFC01E] text-[#FFC01E]" />
-              <span className="font-bold">{streak} Day Streak</span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Active Streak Chip */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-mono">
+              <Flame className="w-4 h-4 fill-orange-500/20" />
+              <span>
+                <strong>{streak}</strong> Day Streak
+              </span>
             </div>
 
-            {/* Campus Rank Pill */}
+            {/* Campus Standing Chip */}
             <Link
-              to="/leaderboard"
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-xs font-mono text-primary hover:bg-primary/20 transition-colors shadow-xs"
+              to="/leaderboard?tab=campus"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 transition-colors text-xs font-mono"
             >
-              <Trophy className="w-4 h-4 text-[#FFC01E]" />
-              <span className="truncate max-w-[200px]">
-                {collegeName} • Rank #{campusRank}
+              <Trophy className="w-4 h-4" />
+              <span>
+                Rank #{campusRank} in {collegeName}
               </span>
-              <ArrowRight className="w-3 h-3 text-text-muted" />
             </Link>
           </div>
         </div>
 
-        {/* 2. MAIN GRID (65% Execution Rail / 35% Telemetry Rail) */}
+        {/* HIGH-DENSITY SPLIT STAGE: 65% Execution Horizon / 35% Telemetry Horizon */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* ============================================================== */}
-          {/* LEFT RAIL (65% / 8 COLS): ACTION CENTER */}
-          {/* ============================================================== */}
+          {/* ========================================================================= */}
+          {/* CENTER STAGE: EXECUTION HORIZON (65% / 8 cols) */}
+          {/* ========================================================================= */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Bento Card: "CONTINUE WORKING" */}
-            <div className="border border-white/[0.08] bg-[#12151E] p-5 rounded-xl space-y-4 shadow-elevation-1">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            {/* Active Sprint Hero */}
+            <ActiveSprintBanner sprint={activeSprint} tasks={sprintTasks} />
+
+            {/* Today's Sprint Tasks Module */}
+            <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#12151D] shadow-elevation-1 space-y-4 text-left">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted">
-                    Continue Working
-                  </span>
-                </div>
-                <Link
-                  to="/roadmaps"
-                  className="text-xs font-mono text-primary hover:underline flex items-center gap-1"
-                >
-                  <span>View Full Curriculum</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono text-[#00B8A3] bg-[#00B8A3]/10 px-2 py-0.5 rounded border border-[#00B8A3]/30 uppercase font-semibold">
-                      DSA Mastery Node
-                    </span>
-                    <DifficultyBadge difficulty={activeContinueProblem.difficulty} />
-                  </div>
-                  <h3 className="text-lg font-bold font-sans text-white tracking-[-0.015em]">
-                    {activeContinueProblem.title}
-                  </h3>
-                  <p className="text-xs text-text-secondary font-sans">
-                    Optimal time & space invariants • Focus on binary search index bounds and two-pointer contracts.
-                  </p>
-                </div>
-
-                <Link
-                  to={`/problems/${activeContinueProblem.slug}`}
-                  className="shrink-0"
-                >
-                  <button className="bg-[#2563EB] hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 shadow-sm">
-                    <Code2 className="w-4 h-4" />
-                    <span>Launch Workspace IDE →</span>
-                  </button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Bento Card: "TODAY'S TARGETS" */}
-            <div className="border border-white/[0.08] bg-[#12151E] p-5 rounded-xl space-y-4 shadow-elevation-1">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  <h3 className="text-base font-semibold font-sans text-white tracking-[-0.015em]">
-                    Today's Targets
+                  <CalendarCheck className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-base font-bold text-white">
+                    Today's Sprint Tasks
                   </h3>
                 </div>
-                <span className="text-xs font-mono text-text-muted">
-                  3 Algorithmically Curated Challenges
+                <span className="text-xs font-mono text-neutral-400">
+                  {todaySprintTasks.filter((t) => t.is_completed).length} /{' '}
+                  {todaySprintTasks.length} Completed
                 </span>
               </div>
 
-              <div className="space-y-2.5">
-                {targetProblems.map((target, idx) => {
-                  const status = progressMap[target.id] || 'todo';
-                  const isSolved = status === 'solved';
+              {/* Tasks Checklist */}
+              <div className="space-y-2">
+                {todaySprintTasks.length > 0 ? (
+                  todaySprintTasks.map((task) => {
+                    const pill = getTaskTypePill(task.task_type);
+                    const isDone = task.is_completed;
+                    const slug = task.problem?.slug;
 
-                  return (
-                    <div
-                      key={target.id}
-                      className="p-3.5 rounded-lg border border-white/[0.06] bg-[#181C28]/80 hover:bg-[#181C28] transition-colors flex items-center justify-between gap-3 group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Interactive Checkbox */}
-                        <button
-                          onClick={() => {
-                            updateProgress(target.id, isSolved ? 'todo' : 'solved');
-                          }}
-                          className="text-text-muted hover:text-[#00B8A3] transition-colors shrink-0"
-                          title={isSolved ? 'Mark as Todo' : 'Mark as Solved'}
-                        >
-                          {isSolved ? (
-                            <CheckCircle2 className="w-5 h-5 text-[#00B8A3] fill-[#00B8A3]/10" />
-                          ) : (
-                            <Circle className="w-5 h-5 text-white/20 hover:text-white/40" />
-                          )}
-                        </button>
+                    return (
+                      <div
+                        key={task.id}
+                        className={cn(
+                          'p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 group',
+                          isDone
+                            ? 'border-emerald-500/30 bg-emerald-500/[0.04]'
+                            : 'border-white/[0.06] bg-[#181C26] hover:border-white/20'
+                        )}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Interactive Completion Checkbox */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTask(task)}
+                            className={cn(
+                              'w-4 h-4 rounded border flex items-center justify-center text-[10px] shrink-0 transition-colors',
+                              isDone
+                                ? 'border-emerald-500 bg-emerald-500 text-black font-bold'
+                                : 'border-white/20 group-hover:border-emerald-400 text-transparent'
+                            )}
+                          >
+                            ✓
+                          </button>
 
-                        {/* Title and tags */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-text-muted font-bold">
-                              #{idx + 1}
-                            </span>
-                            <Link
-                              to={`/problems/${target.slug}`}
-                              className="text-sm font-sans font-medium text-text-primary hover:text-primary transition-colors truncate"
+                          <div className="min-w-0 space-y-0.5">
+                            <p
+                              className={cn(
+                                'text-sm font-semibold truncate',
+                                isDone ? 'line-through text-neutral-400' : 'text-neutral-100'
+                              )}
                             >
-                              {target.title}
-                            </Link>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <DifficultyBadge difficulty={target.difficulty} />
-                            <span className="text-[11px] font-mono text-text-muted flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              ~{target.estimatedMinutes}m
-                            </span>
-                            <div className="hidden sm:flex items-center gap-1.5">
-                              {target.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[10px] font-mono text-neutral-300 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.2 rounded"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
+                              {task.title}
+                            </p>
+                            <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400">
+                              <span
+                                className={cn(
+                                  'px-1.5 py-0.2 rounded border font-semibold text-[10px]',
+                                  pill.className
+                                )}
+                              >
+                                {pill.label}
+                              </span>
+                              <span>•</span>
+                              <span>{task.estimated_minutes} min</span>
+                              {task.problem && (
+                                <>
+                                  <span>•</span>
+                                  <DifficultyBadge
+                                    difficulty={task.problem.difficulty}
+                                    showPip={false}
+                                    className="text-[9px] px-1 py-0.2"
+                                  />
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Direct Solve Button */}
-                      <Link to={`/problems/${target.slug}`}>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="h-8 text-xs font-mono shrink-0"
-                          leftIcon={<Code2 className="w-3 h-3" />}
-                        >
-                          {isSolved ? 'Review' : 'Solve'}
-                        </Button>
-                      </Link>
-                    </div>
-                  );
-                })}
+                        {/* Action Link */}
+                        {slug && (
+                          <Link to={`/problems/${slug}`}>
+                            <button
+                              type="button"
+                              className="px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-[#12151D] hover:bg-white/[0.08] text-neutral-200 border border-white/[0.08] flex items-center gap-1.5 shrink-0 transition-colors"
+                            >
+                              <span>Solve</span>
+                              <ExternalLink className="w-3 h-3 text-blue-400" />
+                            </button>
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-8 text-center rounded-xl border border-dashed border-white/[0.08] bg-[#181C26]/50 space-y-3">
+                    <p className="text-xs text-neutral-400 font-mono">
+                      No tasks scheduled for today in this sprint horizon.
+                    </p>
+                    <Link to="/app/diagnostic">
+                      <Button variant="primary" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5" />}>
+                        Generate Sprint from Diagnostic
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Empirical Progress Matrix */}
+            <CategoryProgressModule
+              solvedCount={solvedCount}
+              totalProblems={totalProblems}
+              easySolved={easySolved}
+              easyTotal={easyTotal}
+              medSolved={medSolved}
+              medTotal={medTotal}
+              hardSolved={hardSolved}
+              hardTotal={hardTotal}
+              topicMastery={topicMastery}
+            />
           </div>
 
-          {/* ============================================================== */}
-          {/* RIGHT RAIL (35% / 4 COLS): TELEMETRY & STANDINGS */}
-          {/* ============================================================== */}
+          {/* ========================================================================= */}
+          {/* RIGHT RAIL: TELEMETRY & PERSISTENT HORIZON (35% / 4 cols) */}
+          {/* ========================================================================= */}
           <div className="lg:col-span-4 space-y-6">
-            {/* 1. SOLVED DISTRIBUTION CARD */}
-            <RadialProgressRing
-              solved={solvedCount}
-              total={150}
-              easySolved={easySolved}
-              easyTotal={60}
-              mediumSolved={mediumSolved}
-              mediumTotal={65}
-              hardSolved={hardSolved}
-              hardTotal={25}
-              size={120}
-              strokeWidth={8}
-              compact={true}
-              className="flex-col md:flex-col"
-            />
+            {/* Problem of the Day (POTD) Widget */}
+            <ProblemOfTheDayCard solvedProblemIds={telemetry.solvedProblemIds} />
 
-            {/* 2. 30-DAY ACTIVITY PULSE (BINDED STRICTLY TO REAL SUBMISSIONS) */}
-            <div className="p-5 rounded-xl border border-white/[0.08] bg-[#12151E] space-y-3 shadow-elevation-1">
-              <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-[#FFC01E]" />
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
-                    30-Day Activity Pulse
-                  </h4>
+            {/* 30-Day Activity Pulse */}
+            <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#12151D] shadow-elevation-1 space-y-3 text-left">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                    Telemetry Invariants
+                  </span>
+                  <h4 className="text-sm font-bold text-white">30-Day Activity Pulse</h4>
                 </div>
-                <span className="text-[11px] font-mono text-[#00B8A3] font-bold">
-                  {activeInLast30} / 30 Active
+                <span className="text-xs font-mono text-emerald-400 font-semibold">
+                  {activeDaysCount} / 30 Active
                 </span>
               </div>
 
-              {/* 30-day dots: dark slate (#1C212E) for inactive, vibrant green (#00B8A3) for active */}
-              <div className="grid grid-cols-10 gap-1.5 py-1">
-                {recentDays.map((d, idx) => (
+              {/* 30-Cell Micro-Grid */}
+              <div className="grid grid-cols-10 gap-1.5 pt-1">
+                {activityPulseCells.map((cell) => (
                   <div
-                    key={idx}
+                    key={cell.dateStr}
+                    title={`${cell.dateStr}: ${cell.count} submissions`}
                     className={cn(
-                      'h-4 rounded-[2px] transition-transform duration-75 cursor-pointer flex items-center justify-center text-[8px] font-mono border',
-                      d.completed
-                        ? 'bg-[#00B8A3] border-[#00B8A3]/40 shadow-xs'
-                        : 'bg-[#1C212E] border-transparent hover:border-white/20'
+                      'aspect-square rounded-md transition-all',
+                      cell.active
+                        ? 'bg-[#00B8A3] shadow-[0_0_8px_rgba(0,184,163,0.4)]'
+                        : 'bg-[#1C212E] hover:bg-neutral-800'
                     )}
-                    title={`${d.dateStr}: ${d.completed ? 'Active Submission' : 'No Activity'}`}
                   />
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-[10px] font-mono text-text-muted pt-1">
-                <span>30 days ago</span>
+              <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t border-white/[0.04]">
+                <span>30 Days Ago</span>
                 <span>Today</span>
               </div>
             </div>
 
-            {/* 3. CAMPUS STANDING WIDGET (PURE REAL DATA) */}
-            <div className="p-5 rounded-xl border border-white/[0.08] bg-[#12151E] space-y-3 shadow-elevation-1">
-              <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+            {/* Spaced Repetition Due Today Queue */}
+            <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#12151D] shadow-elevation-1 space-y-3 text-left">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-primary" />
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
-                    Campus Leaderboard
-                  </h4>
+                  <Repeat className="w-4 h-4 text-purple-400" />
+                  <h4 className="text-sm font-bold text-white">Spaced Repetition Queue</h4>
                 </div>
                 <Link
-                  to="/leaderboard"
-                  className="text-[11px] font-mono text-primary hover:underline flex items-center gap-1"
+                  to="/app/revision"
+                  className="text-[11px] font-mono text-purple-400 hover:underline"
                 >
-                  <span>Full League</span>
-                  <ExternalLink className="w-3 h-3" />
+                  Deck View →
                 </Link>
               </div>
 
-              <div className="text-[11px] font-mono text-text-muted truncate">
-                Institution: <strong className="text-text-primary">{collegeName}</strong>
-              </div>
+              <div className="space-y-2">
+                {revisionDueItems.length > 0 ? (
+                  revisionDueItems.map((card) => {
+                    const prob = card.problem;
+                    const stageLabel =
+                      card.interval_days <= 1
+                        ? 'Stage 1 (1d)'
+                        : card.interval_days <= 3
+                        ? 'Stage 2 (3d)'
+                        : card.interval_days <= 7
+                        ? 'Stage 3 (7d)'
+                        : 'Stage 4 (21d)';
 
-              {/* Real peer list */}
-              <div className="space-y-1.5">
-                {campusPeers.map((peer) => (
-                  <div
-                    key={peer.id}
-                    className={cn(
-                      'p-2.5 rounded-lg border text-xs font-mono flex items-center justify-between',
-                      peer.isCurrentUser
-                        ? 'bg-primary/10 border-primary/30 text-white'
-                        : 'bg-[#181C28] border-white/[0.04] text-text-secondary'
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className={cn(
-                          'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
-                          peer.rank === 1
-                            ? 'bg-[#FFC01E]/20 text-[#FFC01E]'
-                            : peer.rank === 2
-                            ? 'bg-gray-300/20 text-gray-300'
-                            : peer.rank === 3
-                            ? 'bg-amber-600/20 text-amber-500'
-                            : 'bg-white/[0.06] text-text-muted'
-                        )}
+                    return (
+                      <div
+                        key={card.id}
+                        className="p-3 rounded-xl border border-white/[0.06] bg-[#181C26] flex items-center justify-between gap-2"
                       >
-                        #{peer.rank}
-                      </span>
-                      <span className="text-text-primary font-medium truncate text-xs">
-                        {peer.name} {peer.isCurrentUser && <span className="text-primary text-[10px]">(You)</span>}
-                      </span>
-                    </div>
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-xs font-semibold text-neutral-200 truncate">
+                            {prob?.title || 'Algorithmic Problem'}
+                          </p>
+                          <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 px-1.5 py-0.2 rounded border border-purple-500/20">
+                            {stageLabel}
+                          </span>
+                        </div>
 
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <span className="text-[#00B8A3] text-[11px] font-semibold">
-                        {peer.solved} AC
-                      </span>
-                      <span className="text-text-muted text-[11px]">{peer.score} pts</span>
-                    </div>
+                        <Link to="/app/revision">
+                          <button className="px-2.5 py-1 rounded text-[11px] font-mono font-medium bg-[#12151D] border border-white/[0.08] text-neutral-300 hover:text-white transition-colors">
+                            Review
+                          </button>
+                        </Link>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-6 text-center space-y-2 rounded-xl border border-dashed border-white/[0.06] bg-[#181C26]/40">
+                    <ShieldCheck className="w-6 h-6 text-emerald-400 mx-auto" />
+                    <p className="text-xs font-mono text-neutral-400">
+                      All revision cards fresh.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -552,3 +580,4 @@ export const DashboardView: React.FC = () => {
     </DashboardLayout>
   );
 };
+export default DashboardView;

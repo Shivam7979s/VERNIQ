@@ -328,4 +328,50 @@ export interface SprintTask {
   };
 }
 
+export interface ProblemOfTheDay {
+  id: string;
+  problem_id: string;
+  scheduled_date: string;
+  points_bonus: number;
+  created_at: string;
+  problems?: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: DifficultyLevel;
+    tags?: string[];
+  };
+}
+
+export interface UserCodespace {
+  id: string;
+  user_id: string;
+  title: string;
+  language: string;
+  code_buffer: string;
+  stdin_buffer?: string | null;
+  tags?: string[];
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserNote {
+  id: string;
+  user_id: string;
+  problem_id?: string | null;
+  title: string;
+  markdown_content: string;
+  is_starred: boolean;
+  created_at: string;
+  updated_at: string;
+  problems?: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: DifficultyLevel;
+  };
+}
+
+
 

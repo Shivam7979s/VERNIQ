@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/ui/layout/AppShell';
 import { PublicLayout } from '@/components/ui/layout/PublicLayout';
 import { FoundationView } from '@/routes/FoundationView';
+import { LandingView } from '@/routes/LandingView';
+import { CodeSpaceView } from '@/routes/CodeSpaceView';
+import { NoteSpaceView } from '@/routes/NoteSpaceView';
 import { ArchitectureView } from '@/routes/ArchitectureView';
 import { RoadmapsView } from '@/routes/RoadmapsView';
 import { ProblemsView } from '@/routes/ProblemsView';
@@ -30,9 +33,10 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <AppShell>
         <Routes>
-          {/* Public Routes with Global PublicLayout */}
+          {/* Public Landing View */}
+          <Route path="/" element={<LandingView />} />
           <Route
-            path="/"
+            path="/foundation"
             element={
               <PublicLayout>
                 <FoundationView />
@@ -187,6 +191,22 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/codespace"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/codespace" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notespace"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/app/notespace" replace />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Authenticated Student Workspace Routes */}
           <Route
@@ -240,6 +260,22 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <RevisionView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/codespace"
+            element={
+              <ProtectedRoute>
+                <CodeSpaceView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/notespace"
+            element={
+              <ProtectedRoute>
+                <NoteSpaceView />
               </ProtectedRoute>
             }
           />
