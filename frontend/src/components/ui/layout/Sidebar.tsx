@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Moon,
   Bookmark,
+  FileEdit,
 } from 'lucide-react';
 import { IconButton } from '../actions/IconButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -175,6 +176,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               to="/problems"
               icon={<Code2 className="w-4 h-4 text-neutral-400" />}
               label="Problem Index"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/authoring"
+              icon={<FileEdit className="w-4 h-4 text-amber-400" />}
+              label="Authoring Studio"
               collapsed={collapsed}
             />
             <NavItem

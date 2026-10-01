@@ -20,7 +20,7 @@ def get_language_profile(language: str) -> LanguageProfile:
         return LanguageProfile(
             name="cpp",
             source_filename="Solution.cpp",
-            compile_cmd=["g++", "-O3", "-std=c++17", "Solution.cpp", "-o", "solution"],
+            compile_cmd=["g++", "-O2", "-std=c++17", "Solution.cpp", "-o", "solution"],
             run_cmd=[binary_name],
             time_limit_multiplier=1.0,
         )
@@ -30,7 +30,7 @@ def get_language_profile(language: str) -> LanguageProfile:
             name="java",
             source_filename="Main.java",
             compile_cmd=["javac", "Main.java"],
-            run_cmd=["java", "-Xmx256m", "-Xss64m", "Main"],
+            run_cmd=["java", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xmx256m", "-Xss64m", "-cp", ".", "Main"],
             time_limit_multiplier=1.5,
         )
 

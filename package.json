@@ -11,7 +11,10 @@
     "dev": "npm --workspace=frontend run dev",
     "build": "npm --workspace=frontend run build",
     "lint": "npm --workspace=frontend run lint",
-    "typecheck": "npm --workspace=frontend run typecheck"
+    "typecheck": "npm --workspace=frontend run typecheck",
+    "dataset:check": "python -m backend.importer.cli check-dirs",
+    "dataset:validate": "python -m backend.importer.cli validate",
+    "dataset:report": "python -m backend.importer.cli report"
   },
   "keywords": [
     "verniq",

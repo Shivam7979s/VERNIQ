@@ -16,8 +16,11 @@ import {
   Cpu,
   BarChart3,
   Flame,
+  Square,
+  Zap,
+  Info,
 } from 'lucide-react';
-import { SubmissionVerdict } from '@/types';
+import { SubmissionVerdict, ExecutionTelemetry, FailedTestCaseInfo } from '@/types';
 
 export type ConsoleTab = 'testcases' | 'custom_input' | 'result';
 
@@ -37,8 +40,12 @@ interface TestCaseConsoleProps {
   onCustomInputChange: (val: string) => void;
   onRunCode: () => void;
   onSubmit: () => void;
+  onCancel?: () => void;
   isExecuting?: boolean;
   verdict?: ExecutionVerdict;
+  executionMode?: 'run' | 'submit' | null;
+  canonicalTestCount?: number;
+  sampleTestCount?: number;
   runtimeMs?: number;
   memoryMb?: number;
   testCasesPassed?: number;
@@ -46,6 +53,8 @@ interface TestCaseConsoleProps {
   stdoutLogs?: string;
   stderrLogs?: string;
   compileOutput?: string;
+  telemetry?: ExecutionTelemetry | null;
+  firstFailedTest?: FailedTestCaseInfo | null;
   className?: string;
 }
 
@@ -55,8 +64,12 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
   onCustomInputChange,
   onRunCode,
   onSubmit,
+  onCancel,
   isExecuting = false,
   verdict = 'idle',
+  executionMode = null,
+  canonicalTestCount = 0,
+  sampleTestCount = 0,
   runtimeMs = 0,
   memoryMb = 0,
   testCasesPassed = 0,
@@ -64,21 +77,32 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
   stdoutLogs = '',
   stderrLogs = '',
   compileOutput = '',
+  telemetry = null,
+  firstFailedTest = null,
   className,
 }) => {
   const [activeTab, setActiveTab] = useState<ConsoleTab>('testcases');
   const [selectedCaseIndex, setSelectedCaseIndex] = useState<number>(0);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isFailedTestCollapsed, setIsFailedTestCollapsed] = useState<boolean>(false);
 
   // Auto-switch to 'result' tab when execution triggers or finishes
   useEffect(() => {
     if (verdict !== 'idle') {
       setActiveTab('result');
       setIsCollapsed(false);
+      setIsFailedTestCollapsed(false);
     }
   }, [verdict]);
 
   const selectedCase = testCases[selectedCaseIndex] || testCases[0];
+
+  const isSubmitMode =
+    executionMode === 'submit' ||
+    (executionMode === null && totalTestCases > (sampleTestCount || 4));
+  const isRunMode =
+    executionMode === 'run' ||
+    (executionMode === null && totalTestCases <= (sampleTestCount || 4));
 
   const getVerdictDetails = (v: ExecutionVerdict) => {
     switch (v) {
@@ -86,8 +110,10 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
       case 'accepted':
         return {
           pill: 'AC',
-          title: 'Accepted',
-          desc: 'All test vectors verified successfully against canonical bounds.',
+          title: isRunMode ? 'Sample Tests Passed' : 'Accepted',
+          desc: isRunMode
+            ? 'All visible sample test cases verified. Run Code evaluates sample tests for quick feedback. Submit runs the full canonical test suite.'
+            : 'All canonical test cases verified successfully against strict time and memory bounds.',
           color: 'text-[#00B8A3] bg-[#00B8A3]/10 border-[#00B8A3]/30',
           badgeColor: 'bg-[#00B8A3] text-black font-bold',
           icon: <CheckCircle2 className="w-5 h-5 text-[#00B8A3]" />,
@@ -97,8 +123,10 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
       case 'wrong_answer':
         return {
           pill: 'WA',
-          title: 'Wrong Answer',
-          desc: 'Output mismatch on test vector evaluated against expected returns.',
+          title: isRunMode ? 'Sample Test Failed' : 'Wrong Answer',
+          desc: isRunMode
+            ? 'Output mismatch on visible sample test vector evaluated against expected returns.'
+            : 'Output mismatch on canonical test vector. Hidden test data remains protected.',
           color: 'text-[#FF375F] bg-[#FF375F]/10 border-[#FF375F]/30',
           badgeColor: 'bg-[#FF375F] text-white font-bold',
           icon: <XCircle className="w-5 h-5 text-[#FF375F]" />,
@@ -148,12 +176,24 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
           icon: <AlertTriangle className="w-5 h-5 text-[#F97316]" />,
           isPositive: false,
         };
+      case 'cancelled':
+        return {
+          pill: 'CAN',
+          title: 'Execution Cancelled',
+          desc: 'Execution was terminated by user request.',
+          color: 'text-neutral-400 bg-neutral-800/30 border-neutral-700/50',
+          badgeColor: 'bg-neutral-700 text-white font-bold',
+          icon: <XCircle className="w-5 h-5 text-neutral-400" />,
+          isPositive: false,
+        };
       case 'running':
       case 'pending':
         return {
-          pill: 'RUN',
-          title: 'Executing in Isolated Sandbox...',
-          desc: 'Compiling source and dispatching across worker test vectors.',
+          pill: isRunMode ? 'RUN' : 'SUBMIT',
+          title: isRunMode ? 'Evaluating Sample Tests...' : 'Evaluating Canonical Test Suite...',
+          desc: isRunMode
+            ? 'Compiling source and verifying visible sample test vectors for fast feedback.'
+            : 'Compiling source and executing full test matrix across isolated containers.',
           color: 'text-primary bg-primary/10 border-primary/30',
           badgeColor: 'bg-primary text-white font-bold',
           icon: <Clock className="w-5 h-5 animate-spin text-primary" />,
@@ -241,6 +281,12 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
           </button>
         </div>
 
+        {/* Middle Informational Label */}
+        <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-sans text-neutral-400 px-2 truncate">
+          <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+          <span>Run Code uses sample tests for quick feedback. Submit runs the full canonical test suite.</span>
+        </div>
+
         {/* Right Action Buttons */}
         <div className="flex items-center gap-2">
           <button
@@ -250,6 +296,19 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
           >
             {isCollapsed ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
+
+          {isExecuting && onCancel && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCancel}
+              leftIcon={<Square className="w-3 h-3 fill-current text-red-400" />}
+              className="h-7 text-xs font-mono bg-red-950/60 hover:bg-red-900/80 border-red-800/60 text-red-200"
+              title="Stop execution and release isolated sandbox resources"
+            >
+              Stop
+            </Button>
+          )}
 
           <Button
             size="sm"
@@ -283,6 +342,19 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
           {/* TAB 1: TESTCASE */}
           {activeTab === 'testcases' && (
             <div className="space-y-3">
+              {/* Informational Banner */}
+              <div className="flex items-center justify-between text-[11px] font-sans text-neutral-400 bg-white/[0.02] border border-white/[0.06] px-3 py-1.5 rounded">
+                <span className="flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>Run Code uses sample tests for quick feedback. Submit runs the full canonical test suite.</span>
+                </span>
+                {canonicalTestCount > 0 && (
+                  <span className="font-mono text-[10px] text-neutral-400 shrink-0">
+                    Sample: {testCases.length} / Canonical: {canonicalTestCount}
+                  </span>
+                )}
+              </div>
+
               {/* Case selector pills */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 {testCases.map((tc, idx) => (
@@ -326,6 +398,38 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
                       {selectedCase.expectedOutput}
                     </pre>
                   </div>
+
+                  {selectedCase.actualOutput !== undefined && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-sans font-semibold text-neutral-400 uppercase tracking-wider">
+                          Actual Output
+                        </label>
+                        {selectedCase.verdict && (
+                          <span
+                            className={cn(
+                              'text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase',
+                              selectedCase.verdict === 'ac' || selectedCase.verdict === 'accepted'
+                                ? 'bg-[#00B8A3]/20 text-[#00B8A3]'
+                                : 'bg-[#FF375F]/20 text-[#FF375F]'
+                            )}
+                          >
+                            {selectedCase.verdict === 'ac' || selectedCase.verdict === 'accepted' ? 'Passed' : 'Mismatch'}
+                          </span>
+                        )}
+                      </div>
+                      <pre
+                        className={cn(
+                          'p-2.5 rounded bg-[#12151E] border overflow-x-auto whitespace-pre-wrap leading-relaxed font-semibold',
+                          selectedCase.verdict === 'ac' || selectedCase.verdict === 'accepted'
+                            ? 'border-[#00B8A3]/30 text-[#00B8A3]'
+                            : 'border-[#FF375F]/30 text-[#FF375F]'
+                        )}
+                      >
+                        {selectedCase.actualOutput || '(no output / empty string)'}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -375,21 +479,162 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
                     {/* Test Cases Passed Ratio */}
                     {totalTestCases > 0 && verdict !== 'running' && verdict !== 'pending' && (
                       <div className="flex flex-col items-end shrink-0">
-                        <span className="text-xs font-mono font-bold text-white bg-black/40 px-2.5 py-1 rounded border border-white/10">
-                          {testCasesPassed}/{totalTestCases} Testcases Passed
-                        </span>
-                        <div className="w-24 h-1.5 bg-black/40 rounded-full mt-1.5 overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full transition-all duration-500',
-                              testCasesPassed === totalTestCases ? 'bg-[#00B8A3]' : 'bg-[#FF375F]'
+                        {isSubmitMode ? (
+                          <>
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono text-blue-400 font-semibold mb-1">
+                              <Zap className="w-3 h-3 fill-current" />
+                              <span>Canonical Test Suite</span>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-white bg-black/40 px-2.5 py-1 rounded border border-white/10">
+                              Canonical Tests: {testCasesPassed} / {totalTestCases} Passed
+                            </span>
+                            <div className="w-32 h-1.5 bg-black/40 rounded-full mt-1.5 overflow-hidden">
+                              <div
+                                className={cn(
+                                  'h-full transition-all duration-500',
+                                  testCasesPassed === totalTestCases ? 'bg-[#00B8A3]' : 'bg-[#FF375F]'
+                                )}
+                                style={{ width: `${(testCasesPassed / (totalTestCases || 1)) * 100}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 mt-1">
+                              <span>Canonical Tests: {totalTestCases}</span>
+                              {sampleTestCount > 0 && totalTestCases > sampleTestCount && (
+                                <>
+                                  <span>•</span>
+                                  <span>Sample: {sampleTestCount}</span>
+                                  <span>•</span>
+                                  <span>Hidden/Edge: {totalTestCases - sampleTestCount}</span>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-300 font-medium mb-1">
+                              <span>Sample Tests</span>
+                              <span className="text-neutral-500">•</span>
+                              <span className="text-emerald-400 text-[10px]">Quick Feedback</span>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-white bg-black/40 px-2.5 py-1 rounded border border-white/10">
+                              Sample Tests: {testCasesPassed} / {totalTestCases} Passed
+                            </span>
+                            <div className="w-32 h-1.5 bg-black/40 rounded-full mt-1.5 overflow-hidden">
+                              <div
+                                className={cn(
+                                  'h-full transition-all duration-500',
+                                  testCasesPassed === totalTestCases ? 'bg-[#00B8A3]' : 'bg-[#FF375F]'
+                                )}
+                                style={{ width: `${(testCasesPassed / (totalTestCases || 1)) * 100}%` }}
+                              />
+                            </div>
+                            {canonicalTestCount > 0 && (
+                              <span className="text-[10px] font-mono text-neutral-400 mt-1">
+                                Full suite: {canonicalTestCount} canonical tests on Submit
+                              </span>
                             )}
-                            style={{ width: `${(testCasesPassed / totalTestCases) * 100}%` }}
-                          />
-                        </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
+
+                  {/* First Failed Test Panel (WA, RE, TLE) */}
+                  {firstFailedTest && (
+                    <div className="rounded-lg border border-[#FF375F]/30 bg-[#141824] overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2 bg-[#FF375F]/10 border-b border-[#FF375F]/20">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-[#FF375F]/20 text-[#FF375F] border border-[#FF375F]/30">
+                            {firstFailedTest.failure_type === 'runtime_error'
+                              ? 'RE'
+                              : firstFailedTest.failure_type === 'time_limit_exceeded'
+                              ? 'TLE'
+                              : 'WA'}
+                          </span>
+                          <span className="font-semibold text-xs text-white">First Failed Test</span>
+                          <span className="text-neutral-400 text-xs font-mono">
+                            Test Case #{firstFailedTest.test_number || firstFailedTest.testNumber || 1}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setIsFailedTestCollapsed(!isFailedTestCollapsed)}
+                          className="text-[11px] font-mono text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
+                        >
+                          <span>{isFailedTestCollapsed ? 'Expand' : 'Collapse'}</span>
+                          {isFailedTestCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+
+                      {!isFailedTestCollapsed && (
+                        <div className="p-3 space-y-3 text-xs font-mono">
+                          {/* Input */}
+                          {firstFailedTest.input !== undefined && firstFailedTest.input !== null && (
+                            <div>
+                              <label className="text-[11px] font-sans font-semibold text-neutral-400 uppercase tracking-wider block mb-1">
+                                Input
+                              </label>
+                              <pre className="p-2.5 rounded bg-[#0E1117] border border-white/[0.08] text-neutral-200 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-36">
+                                {firstFailedTest.input}
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Your Output */}
+                          {firstFailedTest.actual_output !== undefined && firstFailedTest.actual_output !== null && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] font-sans font-semibold text-[#FF375F] uppercase tracking-wider">
+                                  Your Output
+                                </label>
+                                {firstFailedTest.normalized && (
+                                  <span className="text-[10px] font-sans text-neutral-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
+                                    Judge normalized whitespace / line endings
+                                  </span>
+                                )}
+                              </div>
+                              <pre className="p-2.5 rounded bg-[#0E1117] border border-[#FF375F]/30 text-[#FF375F] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-36 font-semibold">
+                                {firstFailedTest.actual_output || '(no output / empty string)'}
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Expected Output */}
+                          {firstFailedTest.expected_output !== undefined && firstFailedTest.expected_output !== null && (
+                            <div>
+                              <label className="text-[11px] font-sans font-semibold text-[#00B8A3] uppercase tracking-wider block mb-1">
+                                Expected Output
+                              </label>
+                              <pre className="p-2.5 rounded bg-[#0E1117] border border-[#00B8A3]/30 text-[#00B8A3] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-36 font-semibold">
+                                {firstFailedTest.expected_output}
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Error Diagnostic (if RE / TLE) */}
+                          {firstFailedTest.error_message && (
+                            <div>
+                              <label className="text-[11px] font-sans font-semibold text-[#F97316] uppercase tracking-wider block mb-1">
+                                Error Diagnostic
+                              </label>
+                              <pre className="p-2.5 rounded bg-[#0E1117] border border-[#F97316]/30 text-[#F97316] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-36">
+                                {firstFailedTest.error_message}
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Anti-Leak Security: Remaining Hidden Tests Protected Notice */}
+                          {isSubmitMode && totalTestCases > (firstFailedTest.test_number || firstFailedTest.testNumber || 1) && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-sans text-neutral-400 pt-1 border-t border-white/[0.06]">
+                              <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                              <span>
+                                Remaining hidden test cases ({totalTestCases - (firstFailedTest.test_number || firstFailedTest.testNumber || 1)} tests) remain protected and unexposed.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Runtime & Memory Distribution Cards */}
                   {verdict !== 'running' && verdict !== 'pending' && runtimeMs > 0 && (
@@ -444,6 +689,32 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
                     </div>
                   )}
 
+                  {/* Execution Pipeline Telemetry */}
+                  {verdict !== 'running' && verdict !== 'pending' && telemetry && (
+                    <div className="p-2.5 rounded-lg bg-[#12151E] border border-white/[0.08] flex items-center justify-between text-xs font-mono text-neutral-400">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex items-center gap-1 text-white font-semibold">
+                          <Cpu className="w-3.5 h-3.5 text-blue-400" />
+                          Pipeline: {telemetry.total_ms || 0}ms
+                        </span>
+                        <span>•</span>
+                        <span>Compile: {telemetry.compile_ms || 0}ms</span>
+                        <span>•</span>
+                        <span>Execution: {telemetry.execution_ms || 0}ms</span>
+                      </div>
+                      {telemetry.cached_compilation ? (
+                        <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+                          <Zap className="w-3 h-3 fill-current" />
+                          Cached Artifact
+                        </span>
+                      ) : (
+                        <span className="text-neutral-500 text-[11px]">
+                          Cold Build
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Compilation Output (if CE) */}
                   {compileOutput && (
                     <div>
@@ -481,12 +752,13 @@ export const TestCaseConsole: React.FC<TestCaseConsoleProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="p-6 rounded-lg border border-white/[0.08] bg-[#12151E] text-neutral-400 text-center flex flex-col items-center justify-center space-y-1.5">
+                <div className="p-6 rounded-lg border border-white/[0.08] bg-[#12151E] text-neutral-400 text-center flex flex-col items-center justify-center space-y-2">
                   <Cpu className="w-7 h-7 text-neutral-500 mb-1" />
-                  <p className="text-sm font-sans font-medium text-neutral-300">Ready to Evaluate Solution</p>
-                  <p className="text-xs text-neutral-500 max-w-sm">
-                    Click <strong className="text-white">Run Code</strong> for visible testcases or{' '}
-                    <strong className="text-blue-400">Submit</strong> to run against all hidden testcases.
+                  <p className="text-sm font-sans font-medium text-neutral-200">Ready to Evaluate Solution</p>
+                  <p className="text-xs text-neutral-400 max-w-md leading-relaxed">
+                    <strong className="text-white">Run Code</strong> uses sample tests ({sampleTestCount || testCases.length || 3}) for quick feedback.
+                    <br />
+                    <strong className="text-blue-400">Submit</strong> evaluates the full canonical test suite ({canonicalTestCount > 0 ? `${canonicalTestCount} tests` : '200+ tests'}).
                   </p>
                 </div>
               )}

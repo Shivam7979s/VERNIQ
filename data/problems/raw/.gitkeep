@@ -1,0 +1,3 @@
+# Raw Problem Datasets
+This directory contains original, byte-for-byte pristine source CSV datasets.
+NEVER edit, modify, normalize, or delete files in this directory.

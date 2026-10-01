@@ -18,6 +18,7 @@ export type SubmissionVerdict =
   | 'memory_limit_exceeded'
   | 'compilation_error'
   | 'runtime_error'
+  | 'cancelled'
   | 'internal_error'
   | 'ac'   // Accepted shorthand
   | 'wa'   // Wrong Answer shorthand
@@ -26,6 +27,56 @@ export type SubmissionVerdict =
   | 'ce'   // Compilation Error shorthand
   | 're'   // Runtime Error shorthand
   | 'pe';  // Presentation Error shorthand
+
+export interface ExecutionTelemetry {
+  execution_id: string;
+  request_received_at: string;
+  job_queued_at?: string | null;
+  worker_acquired_at?: string | null;
+  sandbox_created_at?: string | null;
+  compile_started_at?: string | null;
+  compile_finished_at?: string | null;
+  execution_started_at?: string | null;
+  execution_finished_at?: string | null;
+  result_collected_at?: string | null;
+  persistence_finished_at?: string | null;
+  response_sent_at?: string | null;
+  queue_ms?: number;
+  worker_acquisition_ms?: number;
+  sandbox_startup_ms?: number;
+  compile_ms?: number;
+  execution_ms?: number;
+  result_ms?: number;
+  persistence_ms?: number;
+  total_ms?: number;
+  cached_compilation?: boolean;
+}
+
+export interface FailedTestCaseInfo {
+  test_number: number;
+  testNumber?: number;
+  input?: string | null;
+  actual_output?: string | null;
+  actualOutput?: string | null;
+  expected_output?: string | null;
+  expectedOutput?: string | null;
+  error_message?: string | null;
+  errorMessage?: string | null;
+  failure_type?: string | null;
+  failureType?: string | null;
+  normalized?: boolean;
+}
+
+export interface SampleTestResult {
+  test_number: number;
+  input: string;
+  expected_output?: string | null;
+  actual_output?: string | null;
+  passed: boolean;
+  runtime_ms?: number;
+  verdict?: string;
+  stderr?: string | null;
+}
 
 export interface Submission {
   id: string;
@@ -45,6 +96,10 @@ export interface Submission {
   is_custom_run: boolean;
   created_at: string;
   completed_at?: string | null;
+  telemetry?: ExecutionTelemetry | null;
+  first_failed_test?: FailedTestCaseInfo | null;
+  firstFailedTest?: FailedTestCaseInfo | null;
+  sample_test_results?: SampleTestResult[] | null;
 }
 
 export type CompletionStatus = 'completed' | 'in_progress' | 'pending';
@@ -155,8 +210,184 @@ export interface TestCase {
   order_index: number;
 }
 
+export type ProblemWorkflowStatus =
+  | 'draft'
+  | 'content_authoring'
+  | 'content_review'
+  | 'technical_review'
+  | 'provenance_review'
+  | 'judge_ready'
+  | 'ready'
+  | 'published'
+  | 'archived';
+
+export interface ProblemContentRevision {
+  id: string;
+  problem_id: string;
+  revision_number: number;
+  author_id?: string | null;
+  author_type: 'human' | 'ai_assisted' | 'community' | 'imported';
+  generated_with_ai: boolean;
+  human_reviewed: boolean;
+  source_reference?: string | null;
+  change_summary?: string | null;
+  content_snapshot: Record<string, any>;
+  review_status: 'draft' | 'under_review' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+export interface ProblemProvenanceSource {
+  id: string;
+  problem_id: string;
+  source_type: string;
+  source_name: string;
+  source_url?: string | null;
+  license?: string | null;
+  attribution_required: boolean;
+  commercial_use_allowed: boolean;
+  derivative_work_allowed: boolean;
+  provenance_status: string;
+  verification_status: 'pending_review' | 'verified_valid' | 'rejected';
+  verified_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface ProblemTechnicalReview {
+  id: string;
+  problem_id: string;
+  revision_id?: string | null;
+  status: 'pending' | 'passed' | 'failed';
+  reviewer_id?: string | null;
+  reviewed_at?: string | null;
+  checklist: {
+    statement_consistent: boolean;
+    examples_correct: boolean;
+    constraints_consistent: boolean;
+    edge_cases_covered: boolean;
+    solution_logic_valid: boolean;
+    starter_templates_compile: boolean;
+    canonical_tests_valid: boolean;
+    expected_outputs_correct: boolean;
+    languages_compatible: boolean;
+  };
+  review_notes?: string | null;
+  created_at: string;
+}
+
+export type BatchLifecycleStatus =
+  | 'CREATED'
+  | 'SELECTED'
+  | 'AUTHORING'
+  | 'CONTENT_REVIEW'
+  | 'TECHNICAL_REVIEW'
+  | 'PROVENANCE_REVIEW'
+  | 'JUDGE_VALIDATION'
+  | 'HUMAN_APPROVAL'
+  | 'COMPLETED'
+  | 'ARCHIVED';
+
+export type BatchItemStatus =
+  | 'SELECTED'
+  | 'AUTHORING'
+  | 'CONTENT_REVIEW'
+  | 'CONTENT_REVIEW_BLOCKED'
+  | 'TECHNICAL_REVIEW'
+  | 'TECHNICAL_REVIEW_BLOCKED'
+  | 'PROVENANCE_REVIEW'
+  | 'PROVENANCE_REVIEW_BLOCKED'
+  | 'JUDGE_VALIDATION'
+  | 'JUDGE_VALIDATION_BLOCKED'
+  | 'HUMAN_APPROVAL'
+  | 'APPROVED'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface AuthoringBatch {
+  id: string;
+  batch_name: string;
+  target_count: number;
+  actual_count: number;
+  batch_status: BatchLifecycleStatus;
+  authoring_status: string;
+  review_status: string;
+  completion_percentage: number;
+  failure_count: number;
+  published_count: number;
+  selection_criteria: Record<string, any>;
+  created_by?: string | null;
+  creator_email?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+}
+
+export interface BatchProblemItem {
+  id: string;
+  batch_id: string;
+  problem_id: string;
+  item_status: BatchItemStatus;
+  assigned_author_id?: string | null;
+  assigned_reviewer_id?: string | null;
+  failure_step?: string | null;
+  failure_reason?: string | null;
+  retry_count: number;
+  content_completeness_pct: number;
+  test_completeness_pct: number;
+  judge_readiness_pct: number;
+  created_at: string;
+  updated_at: string;
+  verniq_id?: string;
+  title?: string;
+  difficulty?: string;
+  workflow_status?: string;
+  provenance_status?: string;
+  judge_readiness_status?: string;
+  domain_name?: string;
+}
+
+export interface AuthoringQueueItem {
+  id: string;
+  verniq_id: string;
+  title: string;
+  difficulty: DifficultyLevel;
+  domain: string;
+  topics: string[];
+  workflow_status: ProblemWorkflowStatus;
+  provenance_status: string;
+  content_completeness: number;
+  test_completeness: number;
+  test_case_count: number;
+  min_tests_required: number;
+  judge_readiness: string;
+  assigned_batch_id?: string | null;
+  assigned_batch_name?: string | null;
+  ai_assisted: boolean;
+  human_reviewed: boolean;
+  is_published: boolean;
+}
+
+export interface ProductionPipelineMetrics {
+  total_catalog: number;
+  published: number;
+  draft: number;
+  content_authoring: number;
+  content_review: number;
+  technical_review: number;
+  provenance_review: number;
+  judge_ready: number;
+  blocked: number;
+  total_batches: number;
+  active_batches: number;
+  avg_completion_pct: number;
+  total_failed_validations: number;
+  missing_provenance: number;
+  missing_tests: number;
+}
+
 export interface Problem {
   id: string;
+  verniq_id?: string;
   title: string;
   slug: string;
   difficulty: DifficultyLevel;
@@ -164,11 +395,22 @@ export interface Problem {
   description_markdown: string;
   constraints_markdown: string;
   starter_templates: Record<string, string>;
+  input_format?: string | null;
+  output_format?: string | null;
+  time_limit_ms?: number;
+  memory_limit_mb?: number;
   is_premium: boolean;
   is_published: boolean;
+  workflow_status?: ProblemWorkflowStatus;
+  domain?: string;
   tags?: string[];
   status?: ProblemStatus;
   revision_due?: boolean;
+  author_type?: string;
+  generated_with_ai?: boolean;
+  human_reviewed?: boolean;
+  provenance_status?: string;
+  judge_readiness_status?: 'NOT_READY' | 'TESTS_PENDING' | 'LIMITS_PENDING' | 'JUDGE_READY';
   created_at?: string;
   updated_at?: string;
 }

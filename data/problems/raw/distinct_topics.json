@@ -1,0 +1,758 @@
+[
+  {
+    "topic": "Array",
+    "count": 1938
+  },
+  {
+    "topic": "String",
+    "count": 785
+  },
+  {
+    "topic": "Hash Table",
+    "count": 742
+  },
+  {
+    "topic": "Math",
+    "count": 588
+  },
+  {
+    "topic": "Dynamic Programming",
+    "count": 584
+  },
+  {
+    "topic": "Sorting",
+    "count": 482
+  },
+  {
+    "topic": "Greedy",
+    "count": 428
+  },
+  {
+    "topic": "Depth-First Search",
+    "count": 321
+  },
+  {
+    "topic": "Binary Search",
+    "count": 307
+  },
+  {
+    "topic": "Matrix",
+    "count": 255
+  },
+  {
+    "topic": "Breadth-First Search",
+    "count": 248
+  },
+  {
+    "topic": "Bit Manipulation",
+    "count": 244
+  },
+  {
+    "topic": "Tree",
+    "count": 238
+  },
+  {
+    "topic": "Two Pointers",
+    "count": 225
+  },
+  {
+    "topic": "Prefix Sum",
+    "count": 225
+  },
+  {
+    "topic": "Heap (Priority Queue)",
+    "count": 202
+  },
+  {
+    "topic": "Database",
+    "count": 194
+  },
+  {
+    "topic": "Counting",
+    "count": 182
+  },
+  {
+    "topic": "Simulation",
+    "count": 182
+  },
+  {
+    "topic": "Stack",
+    "count": 170
+  },
+  {
+    "topic": "Binary Tree",
+    "count": 169
+  },
+  {
+    "topic": "Graph Theory",
+    "count": 167
+  },
+  {
+    "topic": "Sliding Window",
+    "count": 148
+  },
+  {
+    "topic": "Design",
+    "count": 134
+  },
+  {
+    "topic": "Enumeration",
+    "count": 119
+  },
+  {
+    "topic": "Backtracking",
+    "count": 108
+  },
+  {
+    "topic": "Union-Find",
+    "count": 92
+  },
+  {
+    "topic": "Number Theory",
+    "count": 79
+  },
+  {
+    "topic": "Linked List",
+    "count": 75
+  },
+  {
+    "topic": "Segment Tree",
+    "count": 70
+  },
+  {
+    "topic": "Monotonic Stack",
+    "count": 69
+  },
+  {
+    "topic": "Ordered Set",
+    "count": 69
+  },
+  {
+    "topic": "Divide and Conquer",
+    "count": 56
+  },
+  {
+    "topic": "Trie",
+    "count": 56
+  },
+  {
+    "topic": "Combinatorics",
+    "count": 51
+  },
+  {
+    "topic": "Queue",
+    "count": 50
+  },
+  {
+    "topic": "Recursion",
+    "count": 50
+  },
+  {
+    "topic": "Bitmask",
+    "count": 48
+  },
+  {
+    "topic": "Geometry",
+    "count": 42
+  },
+  {
+    "topic": "Memoization",
+    "count": 40
+  },
+  {
+    "topic": "Binary Search Tree",
+    "count": 40
+  },
+  {
+    "topic": "Binary Indexed Tree",
+    "count": 39
+  },
+  {
+    "topic": "Hash Function",
+    "count": 39
+  },
+  {
+    "topic": "Topological Sort",
+    "count": 38
+  },
+  {
+    "topic": "Shortest Path",
+    "count": 36
+  },
+  {
+    "topic": "String Matching",
+    "count": 35
+  },
+  {
+    "topic": "JavaScript",
+    "count": 32
+  },
+  {
+    "topic": "DP on Trees",
+    "count": 30
+  },
+  {
+    "topic": "Rolling Hash",
+    "count": 29
+  },
+  {
+    "topic": "Game Theory",
+    "count": 27
+  },
+  {
+    "topic": "Data Stream",
+    "count": 24
+  },
+  {
+    "topic": "Interactive",
+    "count": 23
+  },
+  {
+    "topic": "Greatest Common Divisor",
+    "count": 22
+  },
+  {
+    "topic": "Euclidean Algorithm",
+    "count": 20
+  },
+  {
+    "topic": "Monotonic Queue",
+    "count": 18
+  },
+  {
+    "topic": "Brainteaser",
+    "count": 18
+  },
+  {
+    "topic": "Directed Acyclic Graph",
+    "count": 17
+  },
+  {
+    "topic": "Dijkstra's Algorithm",
+    "count": 16
+  },
+  {
+    "topic": "Bracket Sequences",
+    "count": 15
+  },
+  {
+    "topic": "Knapsack Problem",
+    "count": 15
+  },
+  {
+    "topic": "Minimax",
+    "count": 15
+  },
+  {
+    "topic": "Doubly-Linked List",
+    "count": 13
+  },
+  {
+    "topic": "Merge Sort",
+    "count": 13
+  },
+  {
+    "topic": "Randomized",
+    "count": 12
+  },
+  {
+    "topic": "Binary Lifting",
+    "count": 12
+  },
+  {
+    "topic": "Function",
+    "count": 12
+  },
+  {
+    "topic": "Prime Factorization",
+    "count": 12
+  },
+  {
+    "topic": "Lowest Common Ancestor",
+    "count": 11
+  },
+  {
+    "topic": "Z Algorithm",
+    "count": 11
+  },
+  {
+    "topic": "Zero-Sum Game",
+    "count": 11
+  },
+  {
+    "topic": "Longest Increasing Subsequence",
+    "count": 10
+  },
+  {
+    "topic": "Knuth–Morris–Pratt Algorithm",
+    "count": 10
+  },
+  {
+    "topic": "Counting Sort",
+    "count": 10
+  },
+  {
+    "topic": "Bipartite Graph",
+    "count": 10
+  },
+  {
+    "topic": "Fermat's Little Theorem",
+    "count": 10
+  },
+  {
+    "topic": "Pandas",
+    "count": 10
+  },
+  {
+    "topic": "DataFrame",
+    "count": 10
+  },
+  {
+    "topic": "Iterator",
+    "count": 9
+  },
+  {
+    "topic": "Sieve Theory",
+    "count": 9
+  },
+  {
+    "topic": "Sweep Line",
+    "count": 9
+  },
+  {
+    "topic": "Primality Test",
+    "count": 8
+  },
+  {
+    "topic": "0-1 Knapsack",
+    "count": 8
+  },
+  {
+    "topic": "Polygons",
+    "count": 8
+  },
+  {
+    "topic": "Quickselect",
+    "count": 7
+  },
+  {
+    "topic": "Bidirectional Search",
+    "count": 7
+  },
+  {
+    "topic": "Suffix Array",
+    "count": 7
+  },
+  {
+    "topic": "Concurrency",
+    "count": 7
+  },
+  {
+    "topic": "Asynchronous Programming",
+    "count": 7
+  },
+  {
+    "topic": "Flow Network",
+    "count": 7
+  },
+  {
+    "topic": "Quicksort",
+    "count": 6
+  },
+  {
+    "topic": "Bucket Sort",
+    "count": 6
+  },
+  {
+    "topic": "Floyd's Cycle Finding Algorithm",
+    "count": 6
+  },
+  {
+    "topic": "Longest Common Subsequence",
+    "count": 6
+  },
+  {
+    "topic": "Boyer–Moore String-Search Algorithm",
+    "count": 6
+  },
+  {
+    "topic": "Prime Number Sieve",
+    "count": 6
+  },
+  {
+    "topic": "Minimum Spanning Tree",
+    "count": 6
+  },
+  {
+    "topic": "Treap",
+    "count": 6
+  },
+  {
+    "topic": "Probability and Statistics",
+    "count": 6
+  },
+  {
+    "topic": "Promise",
+    "count": 6
+  },
+  {
+    "topic": "Least Common Multiple",
+    "count": 6
+  },
+  {
+    "topic": "Sqrt Decomposition",
+    "count": 6
+  },
+  {
+    "topic": "Matching (Graph)",
+    "count": 6
+  },
+  {
+    "topic": "Complete Knapsack",
+    "count": 5
+  },
+  {
+    "topic": "Pigeonhole Principle",
+    "count": 5
+  },
+  {
+    "topic": "Heuristic Search",
+    "count": 5
+  },
+  {
+    "topic": "A* Search",
+    "count": 5
+  },
+  {
+    "topic": "Graph Coloring",
+    "count": 5
+  },
+  {
+    "topic": "Kosaraju's Algorithm",
+    "count": 5
+  },
+  {
+    "topic": "Tarjan's SCC Algorithm",
+    "count": 5
+  },
+  {
+    "topic": "Successive Shortest Path Algorithm",
+    "count": 5
+  },
+  {
+    "topic": "Cartesian Tree",
+    "count": 5
+  },
+  {
+    "topic": "Bubble Sort",
+    "count": 4
+  },
+  {
+    "topic": "Boyer–Moore Majority Vote Algorithm",
+    "count": 4
+  },
+  {
+    "topic": "Meet in the Middle",
+    "count": 4
+  },
+  {
+    "topic": "Suffix Automaton",
+    "count": 4
+  },
+  {
+    "topic": "Suffix Tree",
+    "count": 4
+  },
+  {
+    "topic": "Impartial Game",
+    "count": 4
+  },
+  {
+    "topic": "Hungarian Algorithm",
+    "count": 4
+  },
+  {
+    "topic": "Aho–Corasick Algorithm",
+    "count": 4
+  },
+  {
+    "topic": "Shell",
+    "count": 4
+  },
+  {
+    "topic": "Reservoir Sampling",
+    "count": 4
+  },
+  {
+    "topic": "Eulerian Circuit",
+    "count": 3
+  },
+  {
+    "topic": "Eulerian Path",
+    "count": 3
+  },
+  {
+    "topic": "Algorithm X",
+    "count": 3
+  },
+  {
+    "topic": "Linear Algebra",
+    "count": 3
+  },
+  {
+    "topic": "Radix Sort",
+    "count": 3
+  },
+  {
+    "topic": "Prim's Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Kruskal's Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Borůvka's Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Nim Game",
+    "count": 3
+  },
+  {
+    "topic": "Closure",
+    "count": 3
+  },
+  {
+    "topic": "Sprague–Grundy Theorem",
+    "count": 3
+  },
+  {
+    "topic": "Inclusion-Exclusion Principle",
+    "count": 3
+  },
+  {
+    "topic": "Edmonds–Karp Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "MPM Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Push-Relabel Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Dinic's Algorithm",
+    "count": 3
+  },
+  {
+    "topic": "Object-Oriented Programming",
+    "count": 3
+  },
+  {
+    "topic": "Data Reshaping",
+    "count": 3
+  },
+  {
+    "topic": "Minimum-Cost Flow",
+    "count": 3
+  },
+  {
+    "topic": "Manacher",
+    "count": 2
+  },
+  {
+    "topic": "Range Minimum/Maximum Query",
+    "count": 2
+  },
+  {
+    "topic": "Brute-Force Search",
+    "count": 2
+  },
+  {
+    "topic": "Bellman–Ford Algorithm",
+    "count": 2
+  },
+  {
+    "topic": "Floyd–Warshall Algorithm",
+    "count": 2
+  },
+  {
+    "topic": "Semi-Eulerian Graph",
+    "count": 2
+  },
+  {
+    "topic": "Ternary Search",
+    "count": 2
+  },
+  {
+    "topic": "Sort",
+    "count": 2
+  },
+  {
+    "topic": "Bézout's Lemma",
+    "count": 2
+  },
+  {
+    "topic": "Extended Euclidean Algorithm",
+    "count": 2
+  },
+  {
+    "topic": "Hamiltonian Path",
+    "count": 2
+  },
+  {
+    "topic": "0-1 BFS",
+    "count": 2
+  },
+  {
+    "topic": "Rejection Sampling",
+    "count": 2
+  },
+  {
+    "topic": "Strongly Connected Component",
+    "count": 2
+  },
+  {
+    "topic": "Data Cleaning",
+    "count": 2
+  },
+  {
+    "topic": "Maximum Flow",
+    "count": 2
+  },
+  {
+    "topic": "Maximum Matching",
+    "count": 2
+  },
+  {
+    "topic": "Perfect Matching",
+    "count": 2
+  },
+  {
+    "topic": "JSON",
+    "count": 2
+  },
+  {
+    "topic": "Object",
+    "count": 2
+  },
+  {
+    "topic": "Tournament Sort",
+    "count": 1
+  },
+  {
+    "topic": "Newton's Method",
+    "count": 1
+  },
+  {
+    "topic": "Dancing Links",
+    "count": 1
+  },
+  {
+    "topic": "Persistent Data Structure",
+    "count": 1
+  },
+  {
+    "topic": "K-D Tree",
+    "count": 1
+  },
+  {
+    "topic": "Timsort",
+    "count": 1
+  },
+  {
+    "topic": "Biconnected Component",
+    "count": 1
+  },
+  {
+    "topic": "Bridge (Graph)",
+    "count": 1
+  },
+  {
+    "topic": "Lyndon Factorization",
+    "count": 1
+  },
+  {
+    "topic": "Triangulation",
+    "count": 1
+  },
+  {
+    "topic": "Euler's Totient Function",
+    "count": 1
+  },
+  {
+    "topic": "Euler's Theorem",
+    "count": 1
+  },
+  {
+    "topic": "Planar Graph",
+    "count": 1
+  },
+  {
+    "topic": "Event Handling",
+    "count": 1
+  },
+  {
+    "topic": "Convex Hull",
+    "count": 1
+  },
+  {
+    "topic": "Minimum Cut",
+    "count": 1
+  },
+  {
+    "topic": "K Shortest Path",
+    "count": 1
+  },
+  {
+    "topic": "Intervals",
+    "count": 1
+  },
+  {
+    "topic": "Lexicographically Minimal String Rotation",
+    "count": 1
+  },
+  {
+    "topic": "Eulerian Graph",
+    "count": 1
+  },
+  {
+    "topic": "Graph",
+    "count": 1
+  },
+  {
+    "topic": "Articulation Point",
+    "count": 1
+  },
+  {
+    "topic": "Nearest Pair of Points",
+    "count": 1
+  },
+  {
+    "topic": "Mixed Knapsack",
+    "count": 1
+  },
+  {
+    "topic": "Splay Tree",
+    "count": 1
+  },
+  {
+    "topic": "Minimum Enclosing Circle",
+    "count": 1
+  },
+  {
+    "topic": "Sparse Table",
+    "count": 1
+  },
+  {
+    "topic": "Multiple Knapsack",
+    "count": 1
+  },
+  {
+    "topic": "Subsequence",
+    "count": 1
+  }
+]

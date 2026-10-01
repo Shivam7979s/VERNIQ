@@ -28,6 +28,7 @@ import { WorkspaceSubView } from '@/routes/WorkspaceSubView';
 import { NotFoundView } from '@/routes/NotFoundView';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminRoute } from '@/components/auth/AdminRoute';
+import { ProblemAuthoringView } from '@/routes/ProblemAuthoringView';
 
 export const App: React.FC = () => {
   return (
@@ -106,6 +107,22 @@ export const App: React.FC = () => {
               <PublicLayout>
                 <StandaloneIdeView />
               </PublicLayout>
+            }
+          />
+          <Route
+            path="/authoring"
+            element={
+              <PublicLayout>
+                <ProblemAuthoringView />
+              </PublicLayout>
+            }
+          />
+          <Route
+            path="/app/authoring"
+            element={
+              <ProtectedRoute>
+                <ProblemAuthoringView />
+              </ProtectedRoute>
             }
           />
 

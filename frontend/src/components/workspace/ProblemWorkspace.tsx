@@ -22,13 +22,14 @@ import {
   RefreshCw,
   Lightbulb,
   Star,
+  AlertTriangle,
 } from 'lucide-react';
 import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 
-import { runCode, submitSolution } from '@/lib/submissionService';
+import { runCode, submitSolution, cancelExecution } from '@/lib/submissionService';
 import { syncAcceptedSubmissionToSprintAndDiagnostics } from '@/lib/telemetryFeedback';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
-import { ProgrammingLanguage, Submission } from '@/types';
+import { ProgrammingLanguage, Submission, ExecutionTelemetry, FailedTestCaseInfo } from '@/types';
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
   cpp: `#include <vector>\n\nclass Solution {\npublic:\n    // Implement your solution\n};`,
@@ -42,7 +43,7 @@ export const ProblemWorkspace: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const activeSlug = slug || 'two-sum';
 
-  const { problem, testCases: sampleTestCases, loading } = useProblemBySlug(activeSlug);
+  const { problem, testCases: sampleTestCases, canonicalTestCount, loading } = useProblemBySlug(activeSlug);
   const { progressMap, revisionMap, updateProgress, toggleRevision } = useUserProgress();
   const { user, preferredLanguage, updatePreferredLanguage } = useAuth();
 
@@ -63,6 +64,7 @@ export const ProblemWorkspace: React.FC = () => {
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [submissionHistory, setSubmissionHistory] = useState<Submission[]>([]);
   const [verdict, setVerdict] = useState<ExecutionVerdict>('idle');
+  const [executionMode, setExecutionMode] = useState<'run' | 'submit' | null>(null);
   const [runtimeMs, setRuntimeMs] = useState<number>(0);
   const [memoryMb, setMemoryMb] = useState<number>(0);
   const [testCasesPassed, setTestCasesPassed] = useState<number>(0);
@@ -70,6 +72,9 @@ export const ProblemWorkspace: React.FC = () => {
   const [stdoutLogs, setStdoutLogs] = useState<string>('');
   const [stderrLogs, setStderrLogs] = useState<string>('');
   const [compileOutput, setCompileOutput] = useState<string>('');
+  const [telemetry, setTelemetry] = useState<ExecutionTelemetry | null>(null);
+  const [firstFailedTest, setFirstFailedTest] = useState<FailedTestCaseInfo | null>(null);
+  const [sampleTestOutputs, setSampleTestOutputs] = useState<Record<number, { actualOutput?: string; verdict?: 'ac' | 'wa' }>>({});
 
   // Live Supabase Realtime verdict updates
   const { submission: liveSubmission, isRunning, isPending } = useSubmissionRealtime(activeSubmissionId);
@@ -77,6 +82,9 @@ export const ProblemWorkspace: React.FC = () => {
   useEffect(() => {
     if (liveSubmission) {
       setVerdict(liveSubmission.verdict);
+      if (liveSubmission.is_custom_run !== undefined) {
+        setExecutionMode(liveSubmission.is_custom_run ? 'run' : 'submit');
+      }
       if (liveSubmission.runtime_ms) setRuntimeMs(liveSubmission.runtime_ms);
       if (liveSubmission.memory_kb) setMemoryMb(liveSubmission.memory_kb / 1024);
       if (liveSubmission.stdout_output) setStdoutLogs(liveSubmission.stdout_output);
@@ -84,6 +92,10 @@ export const ProblemWorkspace: React.FC = () => {
       if (liveSubmission.compile_output) setCompileOutput(liveSubmission.compile_output);
       if (liveSubmission.test_cases_passed !== undefined) setTestCasesPassed(liveSubmission.test_cases_passed);
       if (liveSubmission.total_test_cases !== undefined) setTotalTestCases(liveSubmission.total_test_cases);
+      if (liveSubmission.telemetry) setTelemetry(liveSubmission.telemetry);
+      if (liveSubmission.first_failed_test || liveSubmission.firstFailedTest) {
+        setFirstFailedTest(liveSubmission.first_failed_test || liveSubmission.firstFailedTest || null);
+      }
 
       // On official accepted submission, notify user progress and mutate sprint tasks + diagnostics
       if (liveSubmission.verdict === 'accepted' && !liveSubmission.is_custom_run && problem) {
@@ -152,33 +164,168 @@ export const ProblemWorkspace: React.FC = () => {
     }
   };
 
-  // Run code against sample visible test cases
+  // Run code against sample visible test cases (fast ephemeral feedback)
   const handleRunCode = async () => {
+    if (verdict === 'running') return;
+
+    // Quarantined draft catalog check
+    if (!problem?.is_published || problem?.workflow_status === 'draft') {
+      setVerdict('cancelled');
+      setStdoutLogs(
+        `[CATALOG INDEX RECORD — DRAFT / CONTENT REVIEW]\n\n` +
+        `Execution Sandbox Quarantined:\n` +
+        `This record (${problem?.verniq_id || 'VRQ-INDEX'}) is indexed in the Verniq catalog but has not yet passed formal content review.\n` +
+        `Verified test cases, constraints, and sandbox execution are enabled only for published problems.`
+      );
+      return;
+    }
+
+    const subId = crypto.randomUUID();
+    setActiveSubmissionId(subId);
+    setExecutionMode('run');
     setVerdict('running');
-    setStdoutLogs('Compiling solution with target sandbox...\nVerifying against visible test vectors...');
+    setStdoutLogs('Compiling solution in isolated sandbox...\nVerifying visible test vectors...');
     setStderrLogs('');
     setCompileOutput('');
+    setTelemetry(null);
+    setFirstFailedTest(null);
+    setSampleTestOutputs({});
+
+    const visibleCases = sampleTestCases && sampleTestCases.length > 0
+      ? sampleTestCases.map((tc) => ({ input: tc.input, expected_output: tc.expected_output, is_sample: true }))
+      : undefined;
+
+    if (import.meta.env.DEV) {
+      console.log('[VERNIQ RUN TRACE]', {
+        stage: 'handleRunCode',
+        problemId: problem?.id,
+        verniqId: problem?.verniq_id,
+        executionMode: 'run',
+        visibleCasesCount: visibleCases?.length ?? 0,
+      });
+    }
+
     const res = await runCode(
       code,
       language as ProgrammingLanguage,
-      customInput || sampleTestCases[0]?.input || ''
+      customInput || sampleTestCases[0]?.input || '',
+      visibleCases,
+      subId
     );
-    setActiveSubmissionId(res.submissionId);
+
+    if (res.submission) {
+      setVerdict(res.submission.verdict);
+      setRuntimeMs(res.submission.runtime_ms);
+      setMemoryMb(res.submission.memory_kb / 1024);
+      setStdoutLogs(res.submission.stdout_output || '');
+      setStderrLogs(res.submission.stderr_output || '');
+      setCompileOutput(res.submission.compile_output || '');
+      setTestCasesPassed(res.submission.test_cases_passed);
+      setTotalTestCases(res.submission.total_test_cases);
+      if (res.submission.telemetry) {
+        setTelemetry(res.submission.telemetry);
+      }
+      const failed = res.submission.first_failed_test || res.submission.firstFailedTest || null;
+      setFirstFailedTest(failed);
+      if (res.submission.sample_test_results) {
+        const map: Record<number, { actualOutput?: string; verdict?: 'ac' | 'wa' }> = {};
+        res.submission.sample_test_results.forEach((st) => {
+          map[st.test_number] = {
+            actualOutput: st.actual_output || '',
+            verdict: st.passed ? 'ac' : 'wa',
+          };
+        });
+        setSampleTestOutputs(map);
+      }
+    }
   };
 
-  // Submit code against all hidden test cases
+  // Submit code against all hidden test cases (canonical evaluation)
   const handleSubmitCode = async () => {
-    if (!problem) return;
+    if (!problem || verdict === 'running') return;
+
+    // Quarantined draft catalog check
+    if (!problem.is_published || problem.workflow_status === 'draft') {
+      setVerdict('cancelled');
+      setStdoutLogs(
+        `[CATALOG INDEX RECORD — DRAFT / CONTENT REVIEW]\n\n` +
+        `Execution Sandbox Quarantined:\n` +
+        `This record (${problem.verniq_id || 'VRQ-INDEX'}) is indexed in the Verniq catalog but has not yet passed formal content review.\n` +
+        `Verified test cases, constraints, and sandbox execution are enabled only for published problems.`
+      );
+      return;
+    }
+
+    const subId = crypto.randomUUID();
+    setActiveSubmissionId(subId);
+    setExecutionMode('submit');
     setVerdict('running');
-    setStdoutLogs('Executing solution on isolated judge container...\nTesting against all test vectors...');
+    setStdoutLogs('Compiling solution...\nExecuting full test matrix across isolated containers...');
     setStderrLogs('');
     setCompileOutput('');
+    setTelemetry(null);
+    setFirstFailedTest(null);
+
+    if (import.meta.env.DEV) {
+      console.log('[VERNIQ SUBMIT TRACE]', {
+        stage: 'handleSubmitCode',
+        problemId: problem.id,
+        verniqId: problem.verniq_id,
+        executionMode: 'submit',
+        canonicalTestCount,
+        sampleTestCount: sampleTestCases?.length ?? 0,
+      });
+    }
+
     const res = await submitSolution(
       problem.id,
       code,
-      language as ProgrammingLanguage
+      language as ProgrammingLanguage,
+      user?.id,
+      undefined, // Dispatches against the complete canonical test suite
+      subId,
+      canonicalTestCount
     );
-    setActiveSubmissionId(res.submissionId);
+
+    if (import.meta.env.DEV) {
+      console.log('[VERNIQ SUBMIT TRACE]', {
+        stage: 'submitSolution result received',
+        verdict: res.submission?.verdict,
+        testCasesPassed: res.submission?.test_cases_passed,
+        totalTestCases: res.submission?.total_test_cases,
+      });
+    }
+
+    if (res.submission) {
+      setVerdict(res.submission.verdict);
+      setRuntimeMs(res.submission.runtime_ms);
+      setMemoryMb(res.submission.memory_kb / 1024);
+      setStdoutLogs(res.submission.stdout_output || '');
+      setStderrLogs(res.submission.stderr_output || '');
+      setCompileOutput(res.submission.compile_output || '');
+      setTestCasesPassed(res.submission.test_cases_passed);
+      setTotalTestCases(res.submission.total_test_cases);
+      if (res.submission.telemetry) {
+        setTelemetry(res.submission.telemetry);
+      }
+      const failed = res.submission.first_failed_test || res.submission.firstFailedTest || null;
+      setFirstFailedTest(failed);
+      if (res.submission.verdict === 'accepted') {
+        updateProgress(problem.id, 'solved');
+        if (user) {
+          syncAcceptedSubmissionToSprintAndDiagnostics(user.id, problem.id, problem.difficulty);
+        }
+      }
+    }
+  };
+
+  // Cancel active execution
+  const handleCancelExecution = async () => {
+    if (activeSubmissionId && verdict === 'running') {
+      await cancelExecution(activeSubmissionId);
+      setVerdict('cancelled');
+      setStdoutLogs((prev) => (prev ? prev + '\n[CANCELLED] Execution stopped by user.' : '[CANCELLED] Execution stopped by user.'));
+    }
   };
 
   const handleCopyCode = () => {
@@ -220,13 +367,19 @@ export const ProblemWorkspace: React.FC = () => {
 
   const isRevisionMarked = Boolean(revisionMap[problem.id]);
   const isSolved = progressMap[problem.id] === 'solved';
+  const isDraft = !problem.is_published || problem.workflow_status === 'draft';
 
   // Map test cases to TestCaseConsole format
-  const consoleTestCases: TestCaseItem[] = sampleTestCases.map((tc, idx) => ({
-    id: idx + 1,
-    input: tc.input,
-    expectedOutput: tc.expected_output,
-  }));
+  const consoleTestCases: TestCaseItem[] = sampleTestCases.map((tc, idx) => {
+    const sampleRes = sampleTestOutputs[idx + 1];
+    return {
+      id: idx + 1,
+      input: tc.input,
+      expectedOutput: tc.expected_output,
+      actualOutput: sampleRes?.actualOutput,
+      verdict: sampleRes?.verdict,
+    };
+  });
 
   // Left Pane: Description, Editorial, Solutions, Submissions
   const LeftPane = (
@@ -289,8 +442,52 @@ export const ProblemWorkspace: React.FC = () => {
         {/* TAB 1: DESCRIPTION */}
         {leftTab === 'description' && (
           <div className="space-y-6">
+            {/* Draft Catalog Quarantine Banner */}
+            {isDraft && (
+              <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-950/20 text-xs font-mono space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    Catalog Index Record — Draft / Content Review
+                  </span>
+                  <span className="bg-amber-900/40 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50 text-[11px]">
+                    {problem.verniq_id || 'VRQ-INDEX'}
+                  </span>
+                </div>
+                <p className="text-text-secondary leading-relaxed font-sans text-xs">
+                  This problem record was safely ingested as part of the 3,392-problem catalog normalization phase. Algorithmic statement, sample test vectors, mathematical constraints, and judge execution sandbox are quarantined pending formal content-authoring and provenance review.
+                </p>
+                <div className="flex flex-wrap items-center justify-between gap-4 text-[11px] text-text-muted pt-2 border-t border-amber-500/10">
+                  <div className="flex items-center gap-4">
+                    <span>Domain: <strong className="text-gray-300">{problem.domain || 'DSA'}</strong></span>
+                    <span>Workflow: <strong className="text-amber-400">DRAFT</strong></span>
+                    <span>Provenance: <strong className="text-gray-300">REVIEW_REQUIRED</strong></span>
+                  </div>
+                  {problem.verniq_id && (
+                    <Link
+                      to={`/authoring?vrq=${problem.verniq_id}`}
+                      className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded border border-amber-500/40 flex items-center gap-1 font-sans text-xs transition-colors font-medium shadow-xs"
+                    >
+                      <span>Author in Studio</span>
+                      <span>→</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {problem.verniq_id && (
+                  <span className="bg-white/[0.06] text-gray-300 text-xs px-2 py-0.5 rounded font-mono border border-white/[0.08]">
+                    {problem.verniq_id}
+                  </span>
+                )}
+                {problem.domain && problem.domain !== 'DSA' && (
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 border border-purple-800/40">
+                    {problem.domain}
+                  </span>
+                )}
                 <DifficultyBadge difficulty={problem.difficulty} />
                 <Badge variant="neutral">Acceptance: {problem.acceptance_rate}%</Badge>
                 {isSolved && <Badge variant="success">Solved</Badge>}
@@ -311,36 +508,49 @@ export const ProblemWorkspace: React.FC = () => {
             </div>
 
             {/* Sample Examples */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
-                Verified Test Vectors & Examples
-              </h3>
-              {sampleTestCases.map((tc, idx) => (
-                <div key={tc.id || idx} className="p-3.5 rounded-lg border border-border bg-surface-elevated space-y-2">
-                  <div className="font-mono text-xs font-bold text-text-secondary">Example {idx + 1}:</div>
-                  <div className="space-y-1 font-mono text-xs">
-                    <div>
-                      <span className="text-text-secondary">Input: </span>
-                      <span className="text-text-primary font-semibold">{tc.input}</span>
-                    </div>
-                    <div>
-                      <span className="text-text-secondary">Expected Output: </span>
-                      <span className="text-[#00B8A3] font-semibold">{tc.expected_output}</span>
+            {sampleTestCases.length > 0 ? (
+              <div className="space-y-4">
+                <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
+                  Verified Test Vectors & Examples
+                </h3>
+                {sampleTestCases.map((tc, idx) => (
+                  <div key={tc.id || idx} className="p-3.5 rounded-lg border border-border bg-surface-elevated space-y-2">
+                    <div className="font-mono text-xs font-bold text-text-secondary">Example {idx + 1}:</div>
+                    <div className="space-y-1 font-mono text-xs">
+                      <div>
+                        <span className="text-text-secondary">Input: </span>
+                        <span className="text-text-primary font-semibold">{tc.input}</span>
+                      </div>
+                      <div>
+                        <span className="text-text-secondary">Expected Output: </span>
+                        <span className="text-[#00B8A3] font-semibold">{tc.expected_output}</span>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
+                  Test Vectors & Examples
+                </h3>
+                <div className="p-3.5 rounded-lg border border-border bg-surface-elevated text-xs font-mono text-text-secondary">
+                  Test vectors are quarantined for this catalog record pending verification.
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Constraints */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
-                Constraints & Mathematical Bounds
-              </h3>
-              <div className="text-xs font-mono text-text-secondary bg-surface-elevated p-3 rounded-lg border border-border whitespace-pre-line">
-                {problem.constraints_markdown}
+            {problem.constraints_markdown && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-sans font-semibold uppercase tracking-wider text-text-secondary">
+                  Constraints & Mathematical Bounds
+                </h3>
+                <div className="text-xs font-mono text-text-secondary bg-surface-elevated p-3 rounded-lg border border-border whitespace-pre-line">
+                  {problem.constraints_markdown}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -431,8 +641,11 @@ export const ProblemWorkspace: React.FC = () => {
                           {sub.language}
                         </td>
                         <td className="p-2.5 text-text-primary">{sub.runtime_ms} ms</td>
-                        <td className="p-2.5 text-text-secondary">
+                        <td className="p-2.5 text-text-secondary font-mono text-[11px]">
                           {sub.test_cases_passed}/{sub.total_test_cases}
+                          <span className="text-[10px] text-text-tertiary ml-1 font-sans">
+                            {sub.is_custom_run ? '(sample)' : '(canonical)'}
+                          </span>
                         </td>
                         <td className="p-2.5 text-text-secondary">
                           {new Date(sub.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -520,8 +733,12 @@ export const ProblemWorkspace: React.FC = () => {
         onCustomInputChange={setCustomInput}
         onRunCode={handleRunCode}
         onSubmit={handleSubmitCode}
+        onCancel={handleCancelExecution}
         isExecuting={isPending || isRunning || verdict === 'running'}
         verdict={verdict}
+        executionMode={executionMode}
+        canonicalTestCount={canonicalTestCount}
+        sampleTestCount={sampleTestCases?.length || 0}
         runtimeMs={runtimeMs}
         memoryMb={memoryMb}
         testCasesPassed={testCasesPassed}
@@ -529,6 +746,8 @@ export const ProblemWorkspace: React.FC = () => {
         stdoutLogs={stdoutLogs}
         stderrLogs={stderrLogs}
         compileOutput={compileOutput}
+        telemetry={liveSubmission?.telemetry || telemetry}
+        firstFailedTest={firstFailedTest}
       />
     </div>
   );
@@ -546,10 +765,20 @@ export const ProblemWorkspace: React.FC = () => {
             <span>Problem Index</span>
           </Link>
           <span className="text-border">|</span>
+          {problem.verniq_id && (
+            <span className="text-[11px] font-mono text-text-secondary bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+              {problem.verniq_id}
+            </span>
+          )}
           <span className="text-xs font-mono font-bold text-text-primary truncate max-w-xs sm:max-w-md">
             {problem.title}
           </span>
           <DifficultyBadge difficulty={problem.difficulty} />
+          {isDraft && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-800/40">
+              DRAFT
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
