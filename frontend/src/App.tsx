@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/ui/layout/AppShell';
 import { PublicLayout } from '@/components/ui/layout/PublicLayout';
+import { AppLayout } from '@/components/ui/layout/AppLayout';
 import { FoundationView } from '@/routes/FoundationView';
 import { LandingView } from '@/routes/LandingView';
 import { CodeSpaceView } from '@/routes/CodeSpaceView';
@@ -267,7 +268,9 @@ export const App: React.FC = () => {
             path="/app/codespace"
             element={
               <ProtectedRoute>
-                <CodeSpaceView />
+                <AppLayout>
+                  <CodeSpaceView />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -275,7 +278,9 @@ export const App: React.FC = () => {
             path="/app/notespace"
             element={
               <ProtectedRoute>
-                <NoteSpaceView />
+                <AppLayout>
+                  <NoteSpaceView />
+                </AppLayout>
               </ProtectedRoute>
             }
           />

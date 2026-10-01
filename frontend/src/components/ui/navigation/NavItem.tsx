@@ -29,10 +29,10 @@ export const NavItem: React.FC<NavItemProps> = ({
       end={end}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2 rounded text-[13px] font-medium transition-colors select-none',
+          'flex items-center gap-3 px-3 py-2 rounded text-[13px] font-medium transition-colors select-none group',
           isActive
-            ? 'bg-primary/10 text-primary border-l-2 border-primary font-semibold'
-            : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle',
+            ? 'bg-white/[0.04] text-white border-l-2 border-blue-500 font-semibold [&_svg]:text-blue-400'
+            : 'text-neutral-400 hover:text-white hover:bg-white/[0.02] [&_svg]:text-neutral-400 group-hover:[&_svg]:text-white',
           collapsed && 'justify-center px-2',
           className
         )

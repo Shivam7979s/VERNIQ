@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { Sidebar } from './Sidebar';
-import { CommandPalette } from '../actions/CommandPalette';
+import React, { useContext } from 'react';
 import { Breadcrumbs, type BreadcrumbItem } from '../navigation/Breadcrumbs';
 import { useTheme } from '@/hooks/useTheme';
 import { Sun, Moon, Bell } from 'lucide-react';
 import { IconButton } from '../actions/IconButton';
+import { AppLayout, AppLayoutContext } from './AppLayout';
 
 export interface DashboardLayoutProps {
   breadcrumbs?: BreadcrumbItem[];
@@ -15,16 +14,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   breadcrumbs = [{ label: 'App', href: '/app/dashboard' }, { label: 'Workspace' }],
   children,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const { insideAppLayout } = useContext(AppLayoutContext);
   const { theme, toggleTheme } = useTheme();
 
-  return (
-    <div className="min-h-screen flex bg-background text-text-primary">
-      <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((p) => !p)} />
-
+  // If already rendered inside the unified AppLayout shell, avoid duplicate sidebar!
+  if (insideAppLayout) {
+    return (
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar */}
-        <header className="h-14 border-b border-border bg-surface px-6 flex items-center justify-between sticky top-0 z-dock">
+        {/* Top Horizon Bar with Breadcrumbs */}
+        <header className="h-14 border-b border-white/[0.08] bg-[#0D0F15] px-6 flex items-center justify-between sticky top-0 z-20 backdrop-blur-xl">
           <Breadcrumbs items={breadcrumbs} />
 
           <div className="flex items-center gap-2">
@@ -32,7 +30,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               size="sm"
               variant="ghost"
               aria-label="View notifications"
-              icon={<Bell className="w-4 h-4 text-text-muted" />}
+              icon={<Bell className="w-4 h-4 text-neutral-400" />}
             />
             <IconButton
               size="sm"
@@ -49,8 +47,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {children}
         </main>
       </div>
+    );
+  }
 
-      <CommandPalette />
-    </div>
+  // Standalone fallback: wrap inside AppLayout
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      {children}
+    </AppLayout>
   );
 };
+
+export default DashboardLayout;

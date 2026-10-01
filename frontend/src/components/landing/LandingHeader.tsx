@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ArrowRight, Sparkles } from 'lucide-react';
+import { Terminal, Sparkles } from 'lucide-react';
 
 export const LandingHeader: React.FC = () => {
   const { user } = useAuth();
@@ -56,25 +56,29 @@ export const LandingHeader: React.FC = () => {
           {user ? (
             <Link
               to="/app/dashboard"
-              className="inline-flex items-center gap-2 bg-[#2563EB] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+              className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-medium text-blue-300 bg-blue-950/40 border border-blue-500/40 hover:border-blue-400 hover:bg-blue-900/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.35)] transition-all duration-200"
             >
-              <span>Open Mission Control</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              <span className="tracking-wide">Launch Mission Control</span>
+              <span className="text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-150">↗</span>
             </Link>
           ) : (
             <>
               <Link
                 to="/login"
-                className="text-xs sm:text-sm text-neutral-300 hover:text-white px-3 py-2 transition-colors font-medium"
+                className="text-xs font-mono font-medium text-neutral-300 hover:text-white px-3.5 py-1.5 rounded-full hover:bg-white/[0.06] transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/app/diagnostic"
-                className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-medium text-white bg-blue-600/30 border border-blue-500/40 hover:border-blue-400 hover:bg-blue-600/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.35)] backdrop-blur-md transition-all duration-200"
               >
                 <span>Start Assessment</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span className="text-blue-400 group-hover:translate-x-0.5 transition-transform duration-150">→</span>
               </Link>
             </>
           )}
