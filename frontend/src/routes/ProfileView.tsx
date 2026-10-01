@@ -7,6 +7,7 @@ import { TopicMasteryBars } from '@/components/profile/TopicMasteryBars';
 import { BadgeShowcase } from '@/components/profile/BadgeShowcase';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useUserTelemetry } from '@/hooks/useUserTelemetry';
 import { SEEDED_COLLEGES } from '@/lib/colleges';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/data/Card';
 import { Button } from '@/components/ui/actions/Button';
@@ -29,6 +30,7 @@ import { GithubIcon } from '@/components/ui/icons/GithubIcon';
 export const ProfileView: React.FC = () => {
   const { profile, user, updateCollege } = useAuth();
   const { progressMap } = useUserProgress();
+  const telemetry = useUserTelemetry();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'cockpit' | 'settings'>('cockpit');
@@ -50,9 +52,11 @@ export const ProfileView: React.FC = () => {
   const [leetcodeUser, setLeetcodeUser] = useState(profile?.leetcode_username || '');
   const [saving, setSaving] = useState(false);
 
-  // Solved counts (strictly genuine from user_problem_progress / profiles table)
+  // Solved counts (strictly genuine from user_problem_progress / telemetry)
   const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
-  const solvedCount = profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
+  const solvedCount = telemetry.solvedCount > 0
+    ? telemetry.solvedCount
+    : profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
     ? profile.problems_solved_count
     : realSolved;
 
@@ -130,7 +134,16 @@ export const ProfileView: React.FC = () => {
             {/* LEFT RAIL (Developer Identity — 30% Width / 3 cols) */}
             <div className="lg:col-span-3">
               <DeveloperIdentityCard
-                profile={profile}
+                profile={
+                  profile
+                    ? {
+                        ...profile,
+                        current_streak: telemetry.currentStreak,
+                        max_streak: telemetry.maxStreak,
+                        problems_solved_count: solvedCount,
+                      }
+                    : null
+                }
                 onEditSettings={() => setActiveTab('settings')}
               />
             </div>
@@ -157,9 +170,10 @@ export const ProfileView: React.FC = () => {
 
               {/* MIDDLE ROW: 365-DAY SUBMISSION & CONSISTENCY HEATMAP */}
               <ActivityHeatmap
-                totalSubmissions={482}
-                activeDays={184}
-                maxStreak={28}
+                activityMap={telemetry.activityMap}
+                totalSubmissions={telemetry.totalSubmissions}
+                activeDays={telemetry.activeDays}
+                maxStreak={telemetry.maxStreak}
               />
 
               {/* BOTTOM ROW: TOPIC-WISE MASTERY ANALYSIS */}

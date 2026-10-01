@@ -10,6 +10,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from .comparator import compare_outputs
+from .harness import inject_harness
 from .profiles import LanguageProfile, get_language_profile
 
 class TestCaseItem(BaseModel):
@@ -52,18 +53,26 @@ class SandboxRunner:
                 total_test_cases=len(test_cases),
             )
 
+        # Inject problem driver harness if snippet lacks an entrypoint
+        source_code = inject_harness(language, source_code)
+
         # Ephemeral scratch directory - wiped immediately after execution
         with tempfile.TemporaryDirectory(prefix="verniq_sandbox_") as scratch_dir:
             source_filename = profile.source_filename
             compile_cmd = list(profile.compile_cmd) if profile.compile_cmd else None
             run_cmd = list(profile.run_cmd)
 
-            # Auto-detect Java class name and ensure classpath includes current directory
+            # Auto-detect Java entry class name and ensure classpath includes current directory
             if profile.name == "java":
                 match = re.search(r"public\s+class\s+([A-Za-z0-9_]+)", source_code)
-                if not match:
+                if match:
+                    class_name = match.group(1)
+                elif "class Main" in source_code:
+                    class_name = "Main"
+                else:
                     match = re.search(r"class\s+([A-Za-z0-9_]+)", source_code)
-                class_name = match.group(1) if match else "Main"
+                    class_name = match.group(1) if match else "Main"
+
                 source_filename = f"{class_name}.java"
                 compile_cmd = ["javac", source_filename]
                 run_cmd = ["java", "-Xmx256m", "-Xss64m", "-cp", ".", class_name]

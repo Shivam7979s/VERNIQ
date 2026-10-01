@@ -22,6 +22,7 @@ import {
   Lightbulb,
   Star,
 } from 'lucide-react';
+import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 
 import { runCode, submitSolution } from '@/lib/submissionService';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
@@ -180,27 +181,6 @@ export const ProblemWorkspace: React.FC = () => {
     }
   };
 
-  // Tab key indent handling
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const val = target.value;
-      const nextVal = val.substring(0, start) + '    ' + val.substring(end);
-      setCode(nextVal);
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 4;
-      }, 0);
-    } else if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmitCode();
-    } else if (e.ctrlKey && e.key === "'") {
-      e.preventDefault();
-      handleRunCode();
-    }
-  };
 
   if (loading && !problem) {
     return (
@@ -510,21 +490,12 @@ export const ProblemWorkspace: React.FC = () => {
       </div>
 
       {/* Code Editor Body */}
-      <div className="flex-1 flex overflow-hidden relative font-mono text-xs bg-background">
-        {/* Line Numbers */}
-        <div className="w-12 py-3 bg-surface-elevated/40 border-r border-border text-right pr-3 select-none text-text-secondary font-mono text-xs leading-5 shrink-0">
-          {code.split('\n').map((_, i) => (
-            <div key={i}>{i + 1}</div>
-          ))}
-        </div>
-
-        {/* Textarea Code Input */}
-        <textarea
+      <div className="flex-1 flex overflow-hidden relative bg-[#0E1117]">
+        <MonacoCodeEditor
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onKeyDown={handleKeyDown}
-          spellCheck={false}
-          className="flex-1 p-3 bg-transparent text-text-primary font-mono text-xs leading-5 resize-none focus:outline-none whitespace-pre overflow-auto"
+          onChange={setCode}
+          language={language}
+          onRunShortcut={handleRunCode}
         />
       </div>
 

@@ -13,8 +13,24 @@ def normalize_output(text: str) -> str:
         trimmed_lines.pop()
     return "\n".join(trimmed_lines)
 
+import json
+
 def compare_outputs(actual: str, expected: str) -> bool:
     """Compare normalized actual output against expected output."""
     norm_actual = normalize_output(actual)
     norm_expected = normalize_output(expected)
-    return norm_actual == norm_expected
+    if norm_actual == norm_expected:
+        return True
+
+    # Check without any spaces
+    if norm_actual.replace(" ", "") == norm_expected.replace(" ", ""):
+        return True
+
+    # Try parsing as JSON to compare semantic equality (e.g. [0, 1] vs [0,1])
+    try:
+        if json.loads(norm_actual) == json.loads(norm_expected):
+            return True
+    except Exception:
+        pass
+
+    return False

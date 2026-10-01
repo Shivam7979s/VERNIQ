@@ -24,6 +24,7 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
+import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 import { runCode } from '@/lib/submissionService';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
 import { ProgrammingLanguage } from '@/types';
@@ -218,7 +219,6 @@ export const StandaloneIdeView: React.FC = () => {
     }
   }, [liveSubmission]);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Line count
@@ -282,34 +282,6 @@ export const StandaloneIdeView: React.FC = () => {
     }
   };
 
-  // Handle Tab key indent & Cursor position tracking
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const val = target.value;
-      const nextVal = val.substring(0, start) + '    ' + val.substring(end);
-      updateActiveTabCode(nextVal);
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 4;
-        updateCursor(target);
-      }, 0);
-    } else if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault();
-      handleRunCode();
-    }
-  };
-
-  const updateCursor = (target: HTMLTextAreaElement) => {
-    const textBefore = target.value.substring(0, target.selectionStart);
-    const lines = textBefore.split('\n');
-    setCursorPos({
-      line: lines.length,
-      col: lines[lines.length - 1].length + 1,
-    });
-  };
 
   // Copy Code
   const handleCopyCode = () => {
@@ -562,29 +534,12 @@ export const StandaloneIdeView: React.FC = () => {
         {/* ------------------------------------------------------------ */}
         <div className="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.08] bg-[#0E1117] overflow-hidden">
           <div className="flex-1 flex overflow-hidden">
-            {/* Line numbers gutter */}
-            <div className="w-12 py-4 bg-[#0B0D13] select-none text-right pr-3 font-mono text-xs text-neutral-600 border-r border-white/[0.04] overflow-hidden shrink-0 leading-6">
-              {Array.from({ length: Math.max(lineCount, 25) }, (_, i) => (
-                <div key={i + 1}>{i + 1}</div>
-              ))}
-            </div>
-
-            {/* Code editing textarea */}
-            <textarea
-              ref={textareaRef}
+            <MonacoCodeEditor
               value={activeTab.code}
-              onChange={(e) => {
-                updateActiveTabCode(e.target.value);
-                updateCursor(e.currentTarget);
-              }}
-              onKeyDown={handleKeyDown}
-              onClick={(e) => updateCursor(e.currentTarget)}
-              onKeyUp={(e) => updateCursor(e.currentTarget)}
-              spellCheck={false}
-              autoCapitalize="off"
-              autoComplete="off"
-              className="flex-1 p-4 bg-transparent text-neutral-100 font-mono text-sm leading-6 resize-none focus:outline-none overflow-y-auto tab-size-2 selection:bg-blue-600/30"
-              placeholder="// Write your code here..."
+              onChange={updateActiveTabCode}
+              language={activeTab.language}
+              onCursorChange={(line, col) => setCursorPos({ line, col })}
+              onRunShortcut={handleRunCode}
             />
           </div>
         </div>

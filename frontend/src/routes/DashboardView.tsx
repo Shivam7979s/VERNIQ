@@ -6,6 +6,7 @@ import { DifficultyBadge } from '@/components/learning/DifficultyBadge';
 import { Button } from '@/components/ui/actions/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useUserTelemetry } from '@/hooks/useUserTelemetry';
 import {
   Flame,
   Trophy,
@@ -76,14 +77,17 @@ const SEEDED_CAMPUS_PEERS: CampusPeer[] = [
 export const DashboardView: React.FC = () => {
   const { profile, user } = useAuth();
   const { progressMap, updateProgress } = useUserProgress();
+  const telemetry = useUserTelemetry();
 
   const displayName = profile?.full_name || (user?.user_metadata?.full_name as string) || (user ? 'Developer' : 'Guest Developer');
   const collegeName = profile?.college_name || (profile?.college_id ? 'Affiliated College' : 'Independent');
-  const streak = profile?.current_streak || 0;
+  const streak = telemetry.currentStreak > 0 ? telemetry.currentStreak : profile?.current_streak || 0;
   const campusRank = profile?.score ? Math.max(1, 100 - Math.floor(profile.score / 50)) : '-';
 
   const realSolved = Object.values(progressMap).filter((s) => s === 'solved').length;
-  const solvedCount = profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
+  const solvedCount = telemetry.solvedCount > 0
+    ? telemetry.solvedCount
+    : profile?.problems_solved_count !== undefined && profile.problems_solved_count > 0
     ? profile.problems_solved_count
     : realSolved;
 
@@ -91,14 +95,18 @@ export const DashboardView: React.FC = () => {
   const mediumSolved = Math.round(solvedCount * 0.4);
   const hardSolved = Math.max(0, solvedCount - easySolved - mediumSolved);
 
-  // Generate 30-day streak data dynamically based on real streak
+  // Generate 30-day activity data dynamically based on real submissions from database
+  const today = new Date();
   const recentDays = Array.from({ length: 30 }, (_, i) => {
-    const isCompleted = streak > 0 && i < streak;
+    const d = new Date(today);
+    d.setDate(d.getDate() - (29 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const isCompleted = (telemetry.activityMap[dateStr] || 0) > 0;
     return {
-      day: 30 - i,
+      day: i + 1,
       completed: isCompleted,
     };
-  }).reverse();
+  });
 
   return (
     <DashboardLayout

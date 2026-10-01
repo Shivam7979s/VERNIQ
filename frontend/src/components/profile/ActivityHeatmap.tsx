@@ -9,6 +9,7 @@ export interface HeatmapDay {
 }
 
 export interface ActivityHeatmapProps {
+  activityMap?: Record<string, number>;
   totalSubmissions?: number;
   activeDays?: number;
   maxStreak?: number;
@@ -17,9 +18,10 @@ export interface ActivityHeatmapProps {
 }
 
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
-  totalSubmissions = 482,
-  activeDays = 184,
-  maxStreak = 28,
+  activityMap = {},
+  totalSubmissions = 0,
+  activeDays = 0,
+  maxStreak = 0,
   className,
   compact = false,
 }) => {
@@ -30,7 +32,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
     y: number;
   } | null>(null);
 
-  // Generate 52 weeks (364 days) of deterministic activity ending today
+  // Generate 52 weeks (364 days) of authentic activity ending today
   const { weeks, monthLabels } = useMemo(() => {
     const totalDays = compact ? 140 : 364; // 20 weeks for compact, 52 weeks full
     const days: HeatmapDay[] = [];
@@ -41,22 +43,8 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
 
-      // Deterministic pseudorandom count based on date string hash for realistic distribution
-      let hash = 0;
-      for (let j = 0; j < dateStr.length; j++) {
-        hash = (hash * 31 + dateStr.charCodeAt(j)) % 1000;
-      }
-
-      // 60% chance of active on weekdays, lighter on weekends
-      const dayOfWeek = d.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      let count = 0;
-
-      if (!isWeekend && hash % 10 > 2) {
-        count = (hash % 8) + 1;
-      } else if (isWeekend && hash % 10 > 6) {
-        count = (hash % 5) + 1;
-      }
+      // Exact count derived strictly from live database records
+      const count = activityMap[dateStr] || 0;
 
       let level: 0 | 1 | 2 | 3 | 4 = 0;
       if (count >= 8) level = 4;
