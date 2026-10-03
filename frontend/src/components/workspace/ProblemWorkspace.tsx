@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SplitPane } from './SplitPane';
@@ -29,6 +29,8 @@ import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 import { runCode, submitSolution, cancelExecution } from '@/lib/submissionService';
 import { syncAcceptedSubmissionToSprintAndDiagnostics } from '@/lib/telemetryFeedback';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
+import { useAutosave } from '@/hooks/useAutosave';
+import { getLocalDraft, fetchRemoteDraft } from '@/lib/draftService';
 import { ProgrammingLanguage, Submission, ExecutionTelemetry, FailedTestCaseInfo } from '@/types';
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -121,15 +123,69 @@ export const ProblemWorkspace: React.FC = () => {
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
   const [timerRunning, setTimerRunning] = useState<boolean>(true);
 
-  // Load starter template when problem or language changes
+  // Autosave hook
+  const {
+    saveStatus,
+    onCodeChange,
+    flushSave,
+    initCode,
+    resetDraft,
+    retrySave,
+  } = useAutosave({
+    userId: user?.id,
+    problemId: problem?.id,
+    language,
+    debounceMs: 800,
+  });
+
+  // Track loaded session to guarantee user code is never overwritten by starter code during rerenders/remounts
+  const loadedSessionRef = useRef<{ problemId?: string; language?: string }>({});
+
+  // Load saved draft or starter template when problem or language changes
   useEffect(() => {
-    if (!problem) return;
-    const template =
+    if (!problem?.id) return;
+
+    // Guard: If this exact problem and language session is already loaded, do NOT overwrite it!
+    if (
+      loadedSessionRef.current.problemId === problem.id &&
+      loadedSessionRef.current.language === language
+    ) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    // 1. Instant synchronous restoration from local storage
+    const localDraft = getLocalDraft(user?.id, problem.id, language);
+    const starterTemplate =
       problem.starter_templates?.[language] ||
       DEFAULT_TEMPLATES[language] ||
       '// Write code here';
-    setCode(template);
-  }, [problem, language]);
+
+    const initialCode = localDraft !== null ? localDraft : starterTemplate;
+    loadedSessionRef.current = { problemId: problem.id, language };
+    setCode(initialCode);
+    initCode(initialCode);
+
+    // 2. Asynchronous remote check if user is authenticated and localDraft wasn't found
+    if (user?.id && localDraft === null) {
+      fetchRemoteDraft(user.id, problem.id, language).then((remoteCode) => {
+        if (
+          !isCancelled &&
+          remoteCode !== null &&
+          loadedSessionRef.current.problemId === problem.id &&
+          loadedSessionRef.current.language === language
+        ) {
+          setCode(remoteCode);
+          initCode(remoteCode);
+        }
+      });
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [problem?.id, language, user?.id, initCode]);
 
   // Set default custom input when test cases load
   useEffect(() => {
@@ -155,13 +211,23 @@ export const ProblemWorkspace: React.FC = () => {
   };
 
   const handleLanguageChange = (lang: string) => {
+    if (lang === language) return;
+    flushSave();
+
+    const nextDraft = problem?.id ? getLocalDraft(user?.id, problem.id, lang) : null;
+    const nextTemplate =
+      problem?.starter_templates?.[lang] ||
+      DEFAULT_TEMPLATES[lang] ||
+      '// Write code here';
+    const nextCode = nextDraft !== null ? nextDraft : nextTemplate;
+
+    if (problem?.id) {
+      loadedSessionRef.current = { problemId: problem.id, language: lang };
+    }
+    setCode(nextCode);
+    initCode(nextCode);
     setLanguage(lang);
     updatePreferredLanguage(lang);
-    if (problem?.starter_templates?.[lang]) {
-      setCode(problem.starter_templates[lang]);
-    } else {
-      setCode(DEFAULT_TEMPLATES[lang] || '// Write code here');
-    }
   };
 
   // Run code against sample visible test cases (fast ephemeral feedback)
@@ -335,11 +401,12 @@ export const ProblemWorkspace: React.FC = () => {
   };
 
   const handleResetCode = () => {
-    if (problem?.starter_templates?.[language]) {
-      setCode(problem.starter_templates[language]);
-    } else {
-      setCode(DEFAULT_TEMPLATES[language] || '// Write code here');
-    }
+    const starter =
+      problem?.starter_templates?.[language] ||
+      DEFAULT_TEMPLATES[language] ||
+      '// Write code here';
+    setCode(starter);
+    resetDraft(starter);
   };
 
 
@@ -695,6 +762,42 @@ export const ProblemWorkspace: React.FC = () => {
             <option value="typescript">TypeScript 5.4</option>
             <option value="go">Go 1.23</option>
           </select>
+
+          {/* Autosave Status Indicator */}
+          <div
+            id="autosave-status"
+            className="flex items-center gap-1.5 text-xs font-mono ml-2 select-none"
+            aria-live="polite"
+          >
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1 text-text-tertiary">
+                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
+                <span>Saving...</span>
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1 text-[#00B8A3]">
+                <Check className="w-3 h-3" />
+                <span>Saved</span>
+              </span>
+            )}
+            {saveStatus === 'unsaved' && (
+              <span className="flex items-center gap-1 text-text-secondary">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>Unsaved</span>
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <button
+                onClick={retrySave}
+                className="flex items-center gap-1 text-[#FF375F] hover:underline cursor-pointer"
+                title="Save failed. Click to retry."
+              >
+                <AlertTriangle className="w-3 h-3" />
+                <span>Save failed</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -720,7 +823,10 @@ export const ProblemWorkspace: React.FC = () => {
       <div className="flex-1 flex overflow-hidden relative bg-[#0E1117]">
         <MonacoCodeEditor
           value={code}
-          onChange={setCode}
+          onChange={(newCode) => {
+            setCode(newCode);
+            onCodeChange(newCode);
+          }}
           language={language}
           onRunShortcut={handleRunCode}
         />
