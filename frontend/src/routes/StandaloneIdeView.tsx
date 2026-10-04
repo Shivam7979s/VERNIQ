@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/actions/Button';
@@ -26,20 +26,21 @@ import {
   Loader2,
   AlertTriangle,
   Bookmark,
+  RefreshCw,
 } from 'lucide-react';
 import { MonacoCodeEditor } from '@/components/editor/MonacoCodeEditor';
 import { runCode } from '@/lib/submissionService';
 import { useSubmissionRealtime } from '@/hooks/useSubmissionRealtime';
 import { useAuth } from '@/hooks/useAuth';
 import { ProgrammingLanguage } from '@/types';
+import {
+  getLocalIdeState,
+  saveLocalIdeState,
+  ScratchTab,
+} from '@/lib/ideDraftService';
 
-export interface ScratchTab {
-  id: string;
-  title: string;
-  language: string;
-  code: string;
-  stdin: string;
-}
+export type { ScratchTab };
+export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 const DEFAULT_TEMPLATES: Record<string, { label: string; ext: string; template: string }> = {
   java: {
@@ -139,24 +140,123 @@ export const StandaloneIdeView: React.FC = () => {
   const { user, preferredLanguage, updatePreferredLanguage } = useAuth();
   const location = useLocation();
 
-  // Tab State
-  const [tabs, setTabs] = useState<ScratchTab[]>([
-    {
-      id: 'tab-1',
-      title: 'Code 1',
-      language: preferredLanguage || 'java',
-      code: (DEFAULT_TEMPLATES[preferredLanguage || 'java'] || DEFAULT_TEMPLATES.java).template,
-      stdin: 'Hello World 42',
+  // Tab State with Zero-Latency Synchronous LocalStorage Restoration
+  const [tabs, setTabs] = useState<ScratchTab[]>(() => {
+    const savedState = getLocalIdeState(user?.id);
+    if (savedState && savedState.tabs.length > 0) {
+      return savedState.tabs;
+    }
+    const defaultLang = preferredLanguage || 'java';
+    return [
+      {
+        id: 'tab-1',
+        title: 'Code 1',
+        language: defaultLang,
+        code: (DEFAULT_TEMPLATES[defaultLang] || DEFAULT_TEMPLATES.java).template,
+        stdin: 'Hello World 42',
+      },
+      {
+        id: 'tab-2',
+        title: 'Code 2',
+        language: 'python',
+        code: DEFAULT_TEMPLATES.python.template,
+        stdin: 'Python Stdin Vector',
+      },
+    ];
+  });
+
+  const [activeTabId, setActiveTabId] = useState<string>(() => {
+    const savedState = getLocalIdeState(user?.id);
+    if (savedState && savedState.activeTabId) {
+      return savedState.activeTabId;
+    }
+    return 'tab-1';
+  });
+
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+
+  // Monotonic revision and autosave refs
+  const revisionRef = useRef<number>(0);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const tabsRef = useRef<ScratchTab[]>(tabs);
+  const activeTabIdRef = useRef<string>(activeTabId);
+  const userIdRef = useRef<string | undefined>(user?.id);
+
+  // Keep refs in sync
+  useEffect(() => {
+    tabsRef.current = tabs;
+    activeTabIdRef.current = activeTabId;
+  }, [tabs, activeTabId]);
+
+  useEffect(() => {
+    userIdRef.current = user?.id;
+    if (user?.id) {
+      saveLocalIdeState(user.id, tabsRef.current, activeTabIdRef.current, ++revisionRef.current);
+    }
+  }, [user?.id]);
+
+  // Trigger autosave (debounced for rapid typing, immediate for structural changes)
+  const triggerAutosave = useCallback(
+    (updatedTabs: ScratchTab[], activeId: string, immediate: boolean = false) => {
+      tabsRef.current = updatedTabs;
+      activeTabIdRef.current = activeId;
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+
+      const nextRev = ++revisionRef.current;
+
+      if (immediate) {
+        setSaveStatus('saving');
+        const ok = saveLocalIdeState(userIdRef.current, updatedTabs, activeId, nextRev);
+        setSaveStatus(ok ? 'saved' : 'error');
+        return;
+      }
+
+      setSaveStatus('unsaved');
+      debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null;
+        setSaveStatus('saving');
+        const ok = saveLocalIdeState(userIdRef.current, updatedTabs, activeId, nextRev);
+        setSaveStatus(ok ? 'saved' : 'error');
+      }, 500);
     },
-    {
-      id: 'tab-2',
-      title: 'Code 2',
-      language: 'python',
-      code: DEFAULT_TEMPLATES.python.template,
-      stdin: 'Python Stdin Vector',
-    },
-  ]);
-  const [activeTabId, setActiveTabId] = useState<string>('tab-1');
+    []
+  );
+
+  // Synchronously flush pending code on browser window beforeunload or pagehide
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      saveLocalIdeState(
+        userIdRef.current,
+        tabsRef.current,
+        activeTabIdRef.current,
+        ++revisionRef.current
+      );
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      saveLocalIdeState(
+        userIdRef.current,
+        tabsRef.current,
+        activeTabIdRef.current,
+        ++revisionRef.current
+      );
+    };
+  }, []);
 
   // Handle incoming codespace snippet from route navigation
   useEffect(() => {
@@ -171,16 +271,20 @@ export const StandaloneIdeView: React.FC = () => {
     if (stateData && stateData.code !== undefined) {
       const lang = stateData.language || 'java';
       const title = stateData.title || 'Code 1';
-      setTabs((prev) => [
-        {
-          id: 'tab-codespace',
-          title,
-          language: lang,
-          code: stateData.code || '',
-          stdin: stateData.stdin || '',
-        },
-        ...prev.filter((t) => t.id !== 'tab-codespace'),
-      ]);
+      setTabs((prev) => {
+        const nextTabs = [
+          {
+            id: 'tab-codespace',
+            title,
+            language: lang,
+            code: stateData.code || '',
+            stdin: stateData.stdin || '',
+          },
+          ...prev.filter((t) => t.id !== 'tab-codespace'),
+        ];
+        triggerAutosave(nextTabs, 'tab-codespace', true);
+        return nextTabs;
+      });
       setActiveTabId('tab-codespace');
       toast({
         type: 'info',
@@ -188,19 +292,7 @@ export const StandaloneIdeView: React.FC = () => {
         message: `Opened "${title}" from your cloud vault.`,
       });
     }
-  }, [location.state]);
-
-  useEffect(() => {
-    if (preferredLanguage) {
-      setTabs((prev) => {
-        if (prev.length > 0 && prev[0].id === 'tab-1' && prev[0].language !== preferredLanguage) {
-          const templ = (DEFAULT_TEMPLATES[preferredLanguage] || DEFAULT_TEMPLATES.java).template;
-          return prev.map((t, idx) => (idx === 0 ? { ...t, language: preferredLanguage, code: templ } : t));
-        }
-        return prev;
-      });
-    }
-  }, [preferredLanguage]);
+  }, [location.state, triggerAutosave, toast]);
 
   // Active Tab Derived
   const activeTab = useMemo(
@@ -276,25 +368,40 @@ export const StandaloneIdeView: React.FC = () => {
     return activeTab.code.split('\n').length;
   }, [activeTab.code]);
 
+  // Select tab
+  const handleSelectTab = (tabId: string) => {
+    setActiveTabId(tabId);
+    triggerAutosave(tabsRef.current, tabId, true);
+  };
+
+  // Retry save
+  const retrySave = () => {
+    triggerAutosave(tabsRef.current, activeTabIdRef.current, true);
+  };
+
   // Update active tab code
   const updateActiveTabCode = (newCode: string) => {
-    setTabs((prev) =>
-      prev.map((t) => (t.id === activeTab.id ? { ...t, code: newCode } : t))
-    );
+    setTabs((prev) => {
+      const updated = prev.map((t) => (t.id === activeTab.id ? { ...t, code: newCode } : t));
+      triggerAutosave(updated, activeTab.id, false);
+      return updated;
+    });
   };
 
   // Update active tab stdin
   const updateActiveTabStdin = (newStdin: string) => {
-    setTabs((prev) =>
-      prev.map((t) => (t.id === activeTab.id ? { ...t, stdin: newStdin } : t))
-    );
+    setTabs((prev) => {
+      const updated = prev.map((t) => (t.id === activeTab.id ? { ...t, stdin: newStdin } : t));
+      triggerAutosave(updated, activeTab.id, false);
+      return updated;
+    });
   };
 
   // Change language
   const handleLanguageChange = (newLang: string) => {
     updatePreferredLanguage(newLang);
-    setTabs((prev) =>
-      prev.map((t) => {
+    setTabs((prev) => {
+      const updated = prev.map((t) => {
         if (t.id === activeTab.id) {
           return {
             ...t,
@@ -303,8 +410,10 @@ export const StandaloneIdeView: React.FC = () => {
           };
         }
         return t;
-      })
-    );
+      });
+      triggerAutosave(updated, activeTab.id, true);
+      return updated;
+    });
   };
 
   // Add new tab
@@ -318,8 +427,10 @@ export const StandaloneIdeView: React.FC = () => {
       code: DEFAULT_TEMPLATES.cpp.template,
       stdin: '',
     };
-    setTabs((prev) => [...prev, newTab]);
+    const nextTabs = [...tabs, newTab];
+    setTabs(nextTabs);
     setActiveTabId(newId);
+    triggerAutosave(nextTabs, newId, true);
   };
 
   // Close tab
@@ -327,10 +438,12 @@ export const StandaloneIdeView: React.FC = () => {
     e.stopPropagation();
     if (tabs.length === 1) return; // Keep at least one tab
     const nextTabs = tabs.filter((t) => t.id !== idToClose);
+    const nextActiveId = activeTabId === idToClose ? nextTabs[0].id : activeTabId;
     setTabs(nextTabs);
     if (activeTabId === idToClose) {
-      setActiveTabId(nextTabs[0].id);
+      setActiveTabId(nextActiveId);
     }
+    triggerAutosave(nextTabs, nextActiveId, true);
   };
 
 
@@ -513,7 +626,7 @@ export const StandaloneIdeView: React.FC = () => {
             return (
               <div
                 key={tab.id}
-                onClick={() => setActiveTabId(tab.id)}
+                onClick={() => handleSelectTab(tab.id)}
                 className={cn(
                   'h-8 px-3 rounded-md flex items-center gap-2 cursor-pointer transition-colors text-xs font-mono group shrink-0 border',
                   isActive
@@ -560,6 +673,42 @@ export const StandaloneIdeView: React.FC = () => {
               </option>
             ))}
           </select>
+
+          {/* Autosave Status Indicator */}
+          <div
+            id="autosave-status"
+            className="flex items-center gap-1.5 text-xs font-mono px-2 select-none"
+            aria-live="polite"
+          >
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1 text-text-tertiary">
+                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
+                <span>Saving...</span>
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1 text-[#00B8A3]">
+                <Check className="w-3 h-3" />
+                <span>Saved</span>
+              </span>
+            )}
+            {saveStatus === 'unsaved' && (
+              <span className="flex items-center gap-1 text-text-secondary">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>Unsaved</span>
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <button
+                onClick={retrySave}
+                className="flex items-center gap-1 text-[#FF375F] hover:underline cursor-pointer"
+                title="Save failed. Click to retry."
+              >
+                <AlertTriangle className="w-3 h-3" />
+                <span>Save failed</span>
+              </button>
+            )}
+          </div>
 
           {/* Reset Code */}
           <button

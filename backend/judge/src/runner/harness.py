@@ -32,7 +32,7 @@ def detect_solution_method(code: str) -> str:
         "productExceptSelf", "rotate", "reverseWords", "findDuplicate", "characterReplacement",
         "numSubarrayProductLessThanK", "longestOnes", "findClosestElements", "minSubArrayLen", "checkInclusion",
         # 20 Pilot Methods
-        "mergeKLists", "mergeTwoLists", "findMedianSortedArrays", "maxSlidingWindow",
+        "mergeKLists", "mergeTwoLists", "addTwoNumbers", "findMedianSortedArrays", "maxSlidingWindow",
         "lengthOfLongestSubstring", "largestRectangleArea", "minEatingSpeed", "ladderLength",
         "isValidBST", "numIslands", "maxSubArray", "canFinish", "moveZeroes", "isAnagram",
         "coinChange", "climbStairs", "canJump", "isValid", "merge",
@@ -60,6 +60,7 @@ def inject_harness(language: str, code: str) -> str:
     if lang in ("java",):
         sanitized_code = re.sub(r"\bpublic\s+class\s+Solution\b", "class Solution", code)
         sanitized_code = re.sub(r"\bpublic\s+class\s+LRUCache\b", "class LRUCache", sanitized_code)
+        sanitized_code = re.sub(r"\bpublic\s+class\s+ListNode\b", "class ListNode", sanitized_code)
 
         user_imports = []
         non_import_lines = []
@@ -75,7 +76,9 @@ def inject_harness(language: str, code: str) -> str:
         all_imports += "\n"
 
         helpers = ""
-        if "class ListNode" not in sanitized_code:
+        code_no_comments = re.sub(r"/\*.*?\*/", "", sanitized_code, flags=re.DOTALL)
+        code_no_comments = re.sub(r"//.*", "", code_no_comments)
+        if not re.search(r"\bclass\s+ListNode\b", code_no_comments):
             helpers += """
 class ListNode {
     int val;
@@ -85,7 +88,7 @@ class ListNode {
     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
 }
 """
-        if "class TreeNode" not in sanitized_code:
+        if not re.search(r"\bclass\s+TreeNode\b", code_no_comments):
             helpers += """
 class TreeNode {
     int val;
@@ -505,6 +508,16 @@ public class Main {
         int[] l1Data = parseIntArrayParam(input, "list1");
         int[] l2Data = parseIntArrayParam(input, "list2");
         ListNode res = sol.mergeTwoLists(toListNode(l1Data), toListNode(l2Data));
+        System.out.println(listNodeToString(res));
+    }
+}
+"""
+        elif method == "addTwoNumbers":
+            driver += """
+        Solution sol = new Solution();
+        int[] l1Data = parseIntArrayParam(input, "l1");
+        int[] l2Data = parseIntArrayParam(input, "l2");
+        ListNode res = sol.addTwoNumbers(toListNode(l1Data), toListNode(l2Data));
         System.out.println(listNodeToString(res));
     }
 }
@@ -979,6 +992,27 @@ if __name__ == '__main__':
         res_head = sol.mergeTwoLists(l1, l2)
         print(json.dumps(from_node(res_head), separators=(',', ':')))
 """
+        elif method == "addTwoNumbers":
+            driver += """
+        params = __parse_params(raw)
+        def to_node(arr):
+            dummy = ListNode(0)
+            cur = dummy
+            for v in arr:
+                cur.next = ListNode(v)
+                cur = cur.next
+            return dummy.next
+        def from_node(head):
+            res = []
+            while head:
+                res.append(head.val)
+                head = head.next
+            return res
+        l1 = to_node(params[0])
+        l2 = to_node(params[1])
+        res_head = sol.addTwoNumbers(l1, l2)
+        print(json.dumps(from_node(res_head), separators=(',', ':')))
+"""
         elif method == "climbStairs":
             driver += """
         params = __parse_params(raw)
@@ -1279,7 +1313,9 @@ if __name__ == '__main__':
     # =========================================================================
     elif lang in ("typescript", "ts"):
         helpers = ""
-        if "class ListNode" not in code:
+        ts_no_comments = re.sub(r"/\*.*?\*/", "", code, flags=re.DOTALL)
+        ts_no_comments = re.sub(r"//.*", "", ts_no_comments)
+        if not re.search(r"\bclass\s+ListNode\b", ts_no_comments):
             helpers += """
 class ListNode {
     val: number;
@@ -1290,7 +1326,7 @@ class ListNode {
     }
 }
 """
-        if "class TreeNode" not in code:
+        if not re.search(r"\bclass\s+TreeNode\b", ts_no_comments):
             helpers += """
 class TreeNode {
     val: number;
@@ -1823,6 +1859,46 @@ try {
     console.log("Standby");
 }
 """
+        elif method == "addTwoNumbers":
+            driver += """
+        function toListNode(arr: number[]): ListNode | null {
+            const dummy = new ListNode(0);
+            let cur = dummy;
+            for (const v of arr) {
+                cur.next = new ListNode(v);
+                cur = cur.next;
+            }
+            return dummy.next;
+        }
+        function listNodeToArray(head: ListNode | null): number[] {
+            const res: number[] = [];
+            while (head !== null) {
+                res.push(head.val);
+                head = head.next;
+            }
+            return res;
+        }
+        const p1 = __raw.indexOf("l1");
+        const p2 = __raw.indexOf("l2");
+        let l1Arr: number[] = [];
+        let l2Arr: number[] = [];
+        if (p1 !== -1 && p2 !== -1) {
+            const part1 = __raw.substring(p1, p2);
+            const part2 = __raw.substring(p2);
+            l1Arr = __parseArray(part1);
+            l2Arr = __parseArray(part2);
+        } else {
+            l1Arr = __parseArray(__raw);
+        }
+        const l1 = toListNode(l1Arr);
+        const l2 = toListNode(l2Arr);
+        const res = typeof addTwoNumbers === 'function' ? addTwoNumbers(l1, l2) : sol.addTwoNumbers(l1, l2);
+        console.log(JSON.stringify(listNodeToArray(res)));
+    }
+} catch (e) {
+    console.log("Standby");
+}
+"""
         else:
             driver += """
         console.log("Standby");
@@ -1838,7 +1914,9 @@ try {
     # =========================================================================
     elif lang in ("cpp", "c++"):
         helpers = ""
-        if "struct ListNode" not in code and "class ListNode" not in code:
+        cpp_no_comments = re.sub(r"/\*.*?\*/", "", code, flags=re.DOTALL)
+        cpp_no_comments = re.sub(r"//.*", "", cpp_no_comments)
+        if not re.search(r"\b(?:struct|class)\s+ListNode\b", cpp_no_comments):
             helpers += """
 struct ListNode {
     int val;
@@ -1848,7 +1926,7 @@ struct ListNode {
     ListNode(int x, ListNode *next) : val(x), next(next) {}
 };
 """
-        if "struct TreeNode" not in code and "class TreeNode" not in code:
+        if not re.search(r"\b(?:struct|class)\s+TreeNode\b", cpp_no_comments):
             helpers += """
 struct TreeNode {
     int val;
@@ -1882,6 +1960,42 @@ static std::vector<int> __parseVector(const std::string& s) {
         if (ts >> val) res.push_back(val);
     }
     return res;
+}
+
+static ListNode* __toListNode(const std::vector<int>& arr) {
+    ListNode dummy(0);
+    ListNode* cur = &dummy;
+    for (int v : arr) {
+        cur->next = new ListNode(v);
+        cur = cur->next;
+    }
+    return dummy.next;
+}
+
+static void __printListNode(ListNode* head) {
+    std::cout << "[";
+    bool first = true;
+    while (head != nullptr) {
+        if (!first) std::cout << ",";
+        std::cout << head->val;
+        first = false;
+        head = head->next;
+    }
+    std::cout << "]" << std::endl;
+}
+
+static std::vector<int> __parseVectorParam(const std::string& s, const std::string& name) {
+    size_t pos = s.find(name);
+    if (pos != std::string::npos) {
+        size_t start = s.find('[', pos);
+        if (start != std::string::npos) {
+            size_t end = s.find(']', start);
+            if (end != std::string::npos) {
+                return __parseVector(s.substr(start, end - start + 1));
+            }
+        }
+    }
+    return __parseVector(s);
 }
 
 static int __parseIntParam(const std::string& s, const std::string& name) {
@@ -2273,6 +2387,15 @@ int main() {
     std::string s = __parseStringParam(input, "s");
     bool res = sol.wordPattern(pattern, s);
     std::cout << (res ? "true" : "false") << std::endl;
+    return 0;
+}
+"""
+        elif method == "addTwoNumbers":
+            driver += """
+    std::vector<int> l1Data = __parseVectorParam(input, "l1");
+    std::vector<int> l2Data = __parseVectorParam(input, "l2");
+    ListNode* res = sol.addTwoNumbers(__toListNode(l1Data), __toListNode(l2Data));
+    __printListNode(res);
     return 0;
 }
 """
